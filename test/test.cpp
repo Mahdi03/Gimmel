@@ -184,34 +184,36 @@ public:
 };
 
 
-
+#include "../../include/all.hpp" // Example include
 int main() {
 
+	a=1;
+	Cow myCow;
+	myCow.Moo();
 
+	// int blockSize = 64;				// how many samples per block? - affects latency!!!
+	// float sampleRate = 44100;		// sampling rate (samples/second)
+	// int outputChannels = 2;			// how many output channels to open
+	// int inputChannels = 1;			// how many input channels to open
 
-	int blockSize = 64;				// how many samples per block? - affects latency!!!
-	float sampleRate = 44100;		// sampling rate (samples/second)
-	int outputChannels = 2;			// how many output channels to open
-	int inputChannels = 1;			// how many input channels to open
+	// // check if we have any audio devices
+	// if (al::AudioDevice::numDevices() == 0) {
+	// 	printf("Error: No audio devices detected. Exiting...\n");
+	// 	exit(EXIT_FAILURE);
+	// }
 
-	// check if we have any audio devices
-	if (al::AudioDevice::numDevices() == 0) {
-		printf("Error: No audio devices detected. Exiting...\n");
-		exit(EXIT_FAILURE);
-	}
+	// // list all detected audio devices
+	// printf("Audio devices found:\n");
+	// al::AudioDevice::printAll();
+	// printf("\n");
 
-	// list all detected audio devices
-	printf("Audio devices found:\n");
-	al::AudioDevice::printAll();
-	printf("\n");
+	// TestApp app;
+	// //Search for keywords amongst devices
+	// app.audioIO().deviceIn(al::AudioDevice("Microphone"));
+	// app.audioIO().deviceOut(al::AudioDevice("Speaker"));
+	// app.configureAudio(sampleRate, blockSize, outputChannels, inputChannels);
 
-	TestApp app;
-	//Search for keywords amongst devices
-	app.audioIO().deviceIn(al::AudioDevice("Microphone"));
-	app.audioIO().deviceOut(al::AudioDevice("Speaker"));
-	app.configureAudio(sampleRate, blockSize, outputChannels, inputChannels);
-
-	app.start();
+	// app.start();
 
 	return 0;
 }
