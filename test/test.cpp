@@ -184,7 +184,7 @@ public:
 };
 
 
-#include "../../include/all.hpp" // Example include
+#include "../include/all.hpp" // Example include
 int main() {
 
 	a=1;
