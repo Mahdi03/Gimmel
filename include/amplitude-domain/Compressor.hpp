@@ -48,7 +48,16 @@ namespace giml {
                     }
                 }
                 else {
-                    //Then we want to start/continue releasing
+                    //Then we want to start/continue hold/releasing
+                    //If we are in the middle of holding
+                    if (this->ramp <= 0) {
+                        //Then we are done compressing, just return the sample
+                        return in;
+                    }
+                    //Else we want to either start the hold or 
+                    if (this->numHoldTimeSamplesLeft < 0) {
+                        //Then this means we need to set 
+                    }
                     if (this->ramp > 0) {
                         this->ramp -= this->releaseDecrement;
                     }
@@ -74,6 +83,14 @@ namespace giml {
                 std::cout << "Release time set to psuedo-zero value, supply a positive float" << std::endl;
             }
             this->releaseIncrement = 1.f / millisToSamples(releaseMillis);
+        }
+
+        void setRatio(float r) {
+            this->ratio = r;
+        }
+
+        void setThreshold(float t) {
+            this->threshold = dBtoA(t);
         }
 
         void setHoldTime(float holdMillis) {
