@@ -39,9 +39,11 @@ namespace giml {
         }
 
         T processSample(T in) {
+            float magnitude = ::fabs(static_cast<float>(in));
+            float diff = magnitude - this->threshold;
             if (hardKnee) {
                 //TODO:
-                if (::fabs(in) > threshold) {
+                if (magnitude > this->threshold) {
                     //Then we want to start/continue attacking
                     if (this->ramp < 1) {
                         this->ramp += this->attackIncrement;
@@ -62,7 +64,7 @@ namespace giml {
                         this->ramp -= this->releaseDecrement;
                     }
                 }
-                return in * (1 - (this->ramp * this->ratio));
+                return in * (1 - (this->ramp * this->ratio * diff));
             }
             else {
                 //TODO: Implement knee curvature

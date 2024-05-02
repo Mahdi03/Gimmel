@@ -40,7 +40,7 @@ namespace giml {
                 gain = 1.f;
                 }
               return in * gain;
-            }
+        }
 
         void setRatio(float r) {
             this->ratio = r;
