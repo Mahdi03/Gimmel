@@ -10,7 +10,7 @@ namespace giml {
         float attackIncrement = 0.f, releaseDecrement = 0.f;
         int holdTimeSamples = 0, numHoldTimeSamplesLeft = 0;
         float ramp = 0.f; 
-        bool hardKnee = true;
+        bool hardKnee = false;
         int sampleRate;
 
     public:
@@ -65,9 +65,27 @@ namespace giml {
                     }
                 }
                 return in * (1 - (this->ramp * this->ratio * diff));
-            }
+            } 
             else {
-                //TODO: Implement knee curvature
+                float gain = 1.f;
+                if (magnitude >= this->threshold) { // if samp > thresh... 
+                    if (this->ramp >= 1) { // and ramp is max...
+                        this->ramp = 1;
+                        gain = (1 - diff * this->ratio);
+                    } else { // if ramp is not...
+                        this->ramp += attackIncrement;
+                        gain = (1 - (ramp * diff * this->ratio)); 
+                    }
+                } else { // if samp < thresh...
+                    if (this->ramp <= 0) { // and ramp is min...
+                        this->ramp = 0;
+                        gain = 1;
+                    } else { // if ramp is not... 
+                        this->ramp -= releaseDecrement;
+                        gain = (1 - (ramp * diff * this->ratio)); 
+                    }
+                }
+              return in * gain;
             }
         }
 
