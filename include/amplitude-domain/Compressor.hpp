@@ -74,7 +74,7 @@ namespace giml {
                 attackMillis = 0.000000000000000001f;
                 std::cout << "Attack time set to psuedo-zero value, supply a positive float" << std::endl;
             }
-            this->attackIncrement = 1.f / millisToSamples(attackMillis);
+            this->attackIncrement = 1.f / millisToSamples(attackMillis, this->sampleRate);
         }
 
         void setReleaseTime(float releaseMillis) {
@@ -82,7 +82,7 @@ namespace giml {
                 releaseMillis = 0.000000000000000001f;
                 std::cout << "Release time set to psuedo-zero value, supply a positive float" << std::endl;
             }
-            this->releaseIncrement = 1.f / millisToSamples(releaseMillis);
+            this->releaseDecrement = 1.f / millisToSamples(releaseMillis, this->sampleRate);
         }
 
         void setRatio(float r) {
@@ -94,7 +94,7 @@ namespace giml {
         }
 
         void setHoldTime(float holdMillis) {
-            this->holdTimeSamples = millisToSamples(holdMillis);
+            this->holdTimeSamples = millisToSamples(holdMillis, this->sampleRate);
         }
 
         void setHardKnee(bool knee) {
