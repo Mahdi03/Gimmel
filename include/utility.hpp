@@ -149,38 +149,33 @@ namespace giml {
         }
     };
 
+    class JoelsCircularBuffer { // simplest circular buffer I could think of 
+    protected:
+        static const int bufferSize = 1000000; // we can adjust this
+        int maxIndex = bufferSize - 1;
+        float buffer[bufferSize];
+        int writeIndex;
 
-    /* User Interface / Handy Functions
-    - dBtoA: Converts a dB value to its equivalent amplitude
-    ```
-    template 
-    dBtoA (t dBValue) {
-        return 
-    }
-    ```
+    public:
+        virtual void writeSample (float input) {
+            buffer[writeIndex] = input;
+            writeIndex += 1;
 
-    - aTodB: Converts an amplitude value to its equivalent dB rating
-    ```
-    template:
-    aTodB (t aValue) {
-        return 
-    }
-    ```
+            if (writeIndex >= maxIndex) {
+                writeIndex -= maxIndex; // circular logic 
+            }
+        }
 
-    - msToSamps: 
-    ```
-    template:
-    msToSamps (t msVal, int sampleRate) {
-        return 
-    }
-    ```
-
-    - sampsToMs: 
-    ```
-    template:
-    sampsToMs (t sampsVal, int sampleRate) {
-        return 
-    }
-    */
+        virtual float readSample (int delayInSamples) {
+            if (delayInSamples > maxIndex) { // limit delay to maxIndex
+                delayInSamples = maxIndex;
+            }
+            int readIndex = writeIndex - delayInSamples; // calculate readIndex
+            if (readIndex < 0) {
+                readIndex += bufferSize; // circular logic
+            } 
+          return buffer[readIndex]; 
+        }
+    };
 }
 #endif
