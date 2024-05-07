@@ -168,16 +168,174 @@ namespace giml {
             }
         }
 
-        virtual float readSample (int delayInSamples) {
+        virtual float readSample(int delayInSamples) {
             if (delayInSamples > maxIndex) { // limit delay to maxIndex
                 delayInSamples = maxIndex;
             }
             int readIndex = writeIndex - delayInSamples; // calculate readIndex
             if (readIndex < 0) {
                 readIndex += bufferSize; // circular logic
-            } 
-          return buffer[readIndex]; 
+            }
+            return buffer[readIndex];
         }
+    };
+
+
+    /// <summary>
+    /// To use this class, first instantiate it, and then call `.allocate()` with a given size
+    /// </summary>
+    /// <typeparam name="T">type of data to store</typeparam>
+    template <typename T>
+    class CircularBuffer {
+    private:
+        T* pBackingArr = nullptr;
+        size_t currIndex = 0;
+    protected:
+        size_t length = 0;
+        
+        inline void incrementIndex() {
+            if (this->currIndex >= this->length - 1) {
+                currIndex = 0;
+            }
+            else {
+                currIndex++;
+            }
+        }
+        inline void decrementIndex() {
+            if (this->currIndex <= 0) {
+                currIndex = length - 1;
+            }
+            else {
+                currIndex--;
+            }
+        }
+        inline void insertValueAt(int index, const T& f) {
+            pBackingArr[index] = f;
+        }
+    public:
+        //Constructor
+        CircularBuffer() {}
+        CircularBuffer(bool forwardsDirection) : insertionDirection(forwardsDirection) {}
+
+
+        void allocate(size_t size) {
+            this->length = size;
+            this->pBackingArr = (T*)malloc(this->length * sizeof(T));
+            if (!(this->pBackingArr)) {
+                //Could not allocate a size this large in heap
+            }
+        }
+        ~CircularBuffer() {
+            if (this->pBackingArr) {
+                free(this->pBackingArr);
+            }
+        }
+        inline virtual void insertValue(const T& f) {
+            // We want to store these values in an order that makes convolving easier
+            this->insertValueAt(currIndex, f);
+            this->decrementIndex();
+        }
+        inline virtual T readNextValue() {
+            //This function will decrement the array pointer and return the very next value in the array
+            T returnVal = this->at(currIndex);
+            this->incrementIndex();
+            return returnVal;
+        }
+        inline T at(const size_t& index) const {
+            return this->pBackingArr[index];
+        }
+        inline size_t size() const {
+            return this->length;
+        }
+    };
+    
+    template <typename T>
+    class CircularBufferForOscilloscope : public CircularBuffer<T> {
+        /*
+        For this class we want to insert a value, and then read all the values up to the last value which is the newly inserted value
+
+        */
+    private:
+        int currWriteIndex = 0, currReadIndex = 0;
+
+        inline void incrementWriteIndex() {
+            if (this->currWriteIndex >= this->length - 1) {
+                currWriteIndex = 0;
+            }
+            else {
+                currWriteIndex++;
+            }
+        }
+        inline void decrementWriteIndex() {
+            if (this->currWriteIndex <= 0) {
+                currWriteIndex = length - 1;
+            }
+            else {
+                currWriteIndex--;
+            }
+        }
+
+        inline void incrementReadIndex() {
+            if (this->currReadIndex >= this->length - 1) {
+                currReadIndex = 0;
+            }
+            else {
+                currReadIndex++;
+            }
+        }
+        inline void decrementReadIndex() {
+            if (this->currReadIndex <= 0) {
+                currReadIndex = length - 1;
+            }
+            else {
+                currReadIndex--;
+            }
+        }
+
+    public:
+        CircularBufferForOscilloscope() {
+            this->currReadIndex = this->currWriteIndex + 1; //Start it off by 1 since the current read index
+        }
+        ~CircularBufferForOscilloscope() {}
+
+        inline void insertValue(const T& f) override {
+            this->insertValueAt(this->currWriteIndex, f);
+            this->incrementWriteIndex();
+        }
+
+        inline void resetReadHeadIndex() {
+            //Set the read index to the next place after where the previous value has been written to such that if we cycle around a full length, we will end up at the last value that has been inputted right now
+            this->currReadIndex = this->currWriteIndex;
+        }
+
+        inline T readNextValue() override {
+            T returnVal = this->at(currReadIndex);
+            this->incrementReadIndex();
+            return returnVal;
+        }
+
+
+    };
+
+    template <typename T>
+    class Effect {
+    public:
+        Effect() {}
+        virtual ~Effect() {}
+        virtual void enable() {
+            this->enabled = true;
+        }
+
+        virtual void disable() {
+            this->enabled = false;
+        }
+
+        virtual inline T processSample(const T& in) {
+            return in;
+        }
+
+    protected:
+        bool enabled = false;
     };
 }
 #endif
