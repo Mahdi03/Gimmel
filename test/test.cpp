@@ -1,219 +1,105 @@
+#define DR_WAV_IMPLEMENTATION
+#include "dr_wav.h"
 
-#include "al/graphics/al_Mesh.hpp"
 #include <iostream>
+#include <stdlib.h> //For malloc
 
-
-template <typename T>
-class CircularBuffer {
-private:
-	size_t length, currIndex = 0;
-	T* pBackingArr = nullptr;
-	bool insertionDirection = false; //True if we want to insert forwards
-	inline void incrementIndex();
-	inline void decrementIndex();
+class WAVLoader {
 public:
-	CircularBuffer() {}
-	CircularBuffer(bool forwardsDirection) : insertionDirection(forwardsDirection) {
-		
-	}
-	void allocate(size_t size);
-	~CircularBuffer();
-	inline void insertValue(const T& f);
-	inline T readNextValue();
-	inline T at(const size_t &index) const;
-	inline size_t size() const;
-	inline size_t getCurrIndex() const;
+    WAVLoader(const char* filename) {
+        this->openWAVFile(filename);
+    }
+    ~WAVLoader() {
+        if (pArr) {
+            free(pArr);
+        }
+    }
+    bool readSample(float* pFloat) {
+        if (currentIndex < numberOfSamplesActuallyDecoded) {
+            *pFloat = pArr[currentIndex];
+            currentIndex++;
+            return true;
+        }
+        return false;
+    }
+private:
+    float* pArr = nullptr;
+    size_t currentIndex = 0, numberOfSamplesActuallyDecoded = 0;
+    
+    void openWAVFile(const char* filename) {
+        drwav wav;
+        if (!drwav_init_file(&wav, filename)) {
+            // Error opening WAV file.
+            std::cout << "Could not open WAV file for reading: " << filename << std::endl;
+            exit(0);
+        }
+        int32_t* pDecodedInterleavedSamples = (int32_t*)malloc(wav.totalPCMFrameCount * wav.channels * sizeof(int32_t));
+        numberOfSamplesActuallyDecoded = drwav_read_pcm_frames_s32(&wav, wav.totalPCMFrameCount, pDecodedInterleavedSamples);
+        std::cout << "Channels: " << wav.channels << "\n\r Decoded: " << numberOfSamplesActuallyDecoded << "samples\r\nOther val: " << numberOfSamplesActuallyDecoded << std::endl;
+        pArr = (float*)malloc(numberOfSamplesActuallyDecoded * sizeof(float));
+        // Now we want to normalize the entire array
+        normalizeArr(pDecodedInterleavedSamples, numberOfSamplesActuallyDecoded, pArr);
+        free(pDecodedInterleavedSamples);
+    }
+    void normalizeArr(int32_t* pArrIn, int size, float* pArrOut) {
+        for (int i = 0; i < size; i++) {
+            pArrOut[i] = pArrIn[i] / static_cast<double>(2147483647.f); //Divide by 32-bit
+        }
+        ////First calculate the magnitude
+        //double sum = 0.f;
+        //for (int i = 0; i < size; i++) {
+        //    sum += pArrIn[i] * pArrIn[i];
+        //}
+        //float invSqrt = 1 / sqrtf(sum);
+        //for (int i = 0; i < size; i++) {
+        //    pArrOut[i] = invSqrt * pArrIn[i];
+        //}
+    }
 };
 
-
-template <typename T>
-inline void CircularBuffer<T>::incrementIndex() {
-	if (this->currIndex >= this->length - 1) {
-		currIndex = 0;
-	}
-	else {
-		currIndex++;
-	}
-}
-
-template <typename T>
-inline void CircularBuffer<T>::decrementIndex() {
-	if (this->currIndex <= 0) {
-		currIndex = length - 1;
-	}
-	else {
-		currIndex--;
-	}
-}
-
-
-template <typename T>
-void CircularBuffer<T>::allocate(size_t size) {
-	this->length = size;
-	this->pBackingArr = (T*)malloc(this->length * sizeof(T));
-	if (!(this->pBackingArr)) {
-		//Could not allocate a size this large in heap
-	}
-}
-
-template <typename T>
-CircularBuffer<T>::~CircularBuffer() {
-	if (this->pBackingArr) {
-		free(this->pBackingArr);
-	}
-}
-
-template <typename T>
-inline void CircularBuffer<T>::insertValue(const T& f) {
-	// We want to store these values in an order that makes convolving easier
-	pBackingArr[currIndex] = f;
-	if (this->insertionDirection) {
-		this->incrementIndex();
-	}
-	else {
-		this->decrementIndex();
-	}
-}
-
-template <typename T>
-inline T CircularBuffer<T>::readNextValue() {
-	//This function will decrement the array pointer and return the very next value in the array
-	T returnVal = pBackingArr[currIndex];
-	this->incrementIndex();
-	return returnVal;
-}
-
-
-
-template <typename T>
-inline size_t CircularBuffer<T>::getCurrIndex() const {
-	return this->currIndex;
-}
-
-template <typename T>
-inline T CircularBuffer<T>::at(const size_t &index) const {
-	return this->pBackingArr[index];
-}
-
-template <typename T>
-inline size_t CircularBuffer<T>::size() const {
-	return this->length;
-}
-
-
-
-class Oscilloscope : public al::Mesh {
-public:
-	Oscilloscope(int samplerate) : bufferSize(samplerate) {
-		buffer.allocate(bufferSize);
-		this->primitive(al::Mesh::LINE_STRIP);
-		float multiplicand = 2.f / static_cast<float>(bufferSize);
-		for (int i = 0; i < bufferSize; i++) {
-			this->vertex(i * multiplicand - 1.f, 0);
-			buffer.insertValue(0.f);
-		}
-	}
-	~Oscilloscope() {}
-
-	void writeSample(float sample) {
-		buffer.insertValue(sample);
-	}
-
-	void update() {
-		for (int i = 0; i < bufferSize; i++) {
-			this->vertices()[i][1] = buffer.readNextValue();
-		}
-	}
-
+class WAVWriter {
 private:
-	int bufferSize;
-	CircularBuffer<float> buffer{ true };
-};
-
-
-#include "al/app/al_App.hpp"
-#include "al/app/al_GUIDomain.hpp"
-
-class TestApp : public al::App {
-private:
-	Oscilloscope inputScope{ static_cast<int>(al::AudioIO().framesPerBuffer()) };
-	Oscilloscope outputScope{ static_cast<int>(al::AudioIO().framesPerBuffer()) };
-
-	//TODO: Parameters can go here
-	al::Parameter volControl{ "volControl", "", 0.f, -96.f, 6.f };
-	
+    drwav* pWAV;
+    drwav_data_format wavFormat;
 public:
-	void onInit() {
-		// set up GUI
-		auto GUIdomain = al::GUIDomain::enableGUI(al::App::defaultWindowDomain());
-		auto& gui = GUIdomain->newGUI();
+    WAVWriter(const char* filename, int sampleRate = 48000) {
+        
+        wavFormat.bitsPerSample = 32;
+        wavFormat.channels = 1;
+        wavFormat.container = drwav_container_riff;
+        wavFormat.format = DR_WAVE_FORMAT_PCM;
+        wavFormat.sampleRate = sampleRate;
 
-		//TODO: Add any parameters to show on UI here
-		gui.add(volControl);
-		
-
-	}
-
-	void onCreate() {
-		
-	}
-
-	bool onKeyDown(const al::Keyboard& k) override {
-		return true;
-	}
-
-	void onAnimate(double dt) {
-		this->inputScope.update();
-		this->outputScope.update();
-	}
-
-	void onDraw(al::Graphics& g) {
-		g.clear(0);
-		g.camera(al::Viewpoint::IDENTITY); // Ortho [-1:1] x [-1:1]
-		g.color(1.f, 0.34f, 0.2f); //Hot pink
-		g.draw(inputScope);
-		g.color(0.007f, 0.333f, 1.f); //Neon blue
-		g.draw(outputScope);
-	}
-
-	void onSound(al::AudioIOData& io) override {
-		
-	}
-
+        pWAV = drwav_open_file_write(filename, &wavFormat);
+        if (!pWAV) {
+            //Could not open the file
+            std::cout << "Could not open WAV file for writing: " << filename << std::endl;
+            exit(0);
+        }
+    }
+    ~WAVWriter() {
+        if (pWAV) {
+            drwav_close(pWAV);
+        }
+    }
+    void writeSample(float f) {
+        int32_t* pConvertedOut = new int32_t;
+        *pConvertedOut = static_cast<int32_t>(f * 2147483647.f); //Convert the float to a int32 for WAV format
+        drwav_write_pcm_frames(pWAV, 1, pConvertedOut);
+        delete pConvertedOut;
+    }
 
 };
 
 
-#include "../include/all.hpp" // Example include
 int main() {
+    WAVLoader loader { "audio/Gmaj.wav" };
+    WAVWriter writer { "audio/out.wav" };
 
-	a=1;
-	Cow myCow;
-	myCow.Moo();
+    float currentSample;
+    while (loader.readSample(&currentSample)) {
+        writer.writeSample(currentSample);
+    }
 
-	// int blockSize = 64;				// how many samples per block? - affects latency!!!
-	// float sampleRate = 44100;		// sampling rate (samples/second)
-	// int outputChannels = 2;			// how many output channels to open
-	// int inputChannels = 1;			// how many input channels to open
-
-	// // check if we have any audio devices
-	// if (al::AudioDevice::numDevices() == 0) {
-	// 	printf("Error: No audio devices detected. Exiting...\n");
-	// 	exit(EXIT_FAILURE);
-	// }
-
-	// // list all detected audio devices
-	// printf("Audio devices found:\n");
-	// al::AudioDevice::printAll();
-	// printf("\n");
-
-	// TestApp app;
-	// //Search for keywords amongst devices
-	// app.audioIO().deviceIn(al::AudioDevice("Microphone"));
-	// app.audioIO().deviceOut(al::AudioDevice("Speaker"));
-	// app.configureAudio(sampleRate, blockSize, outputChannels, inputChannels);
-
-	// app.start();
-
-	return 0;
+    return 0;
 }
