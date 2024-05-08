@@ -155,7 +155,7 @@ namespace giml {
     protected:
         static const int bufferSize = 1000000; // we can adjust this
         int maxIndex = bufferSize - 1;
-        float buffer[bufferSize];
+        float buffer[bufferSize] = {0};
         int writeIndex;
 
     public:
