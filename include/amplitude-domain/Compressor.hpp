@@ -25,7 +25,7 @@ namespace giml {
      * up to user what precision they are looking for (float is more performant)
      */
     template <typename T>
-    class Compressor {
+    class Compressor : public Effect<T> {
     private:
         float threshold = 1.f, ratio = 1.f;
         float attackIncrement = 0.f, releaseDecrement = 0.f;
@@ -208,7 +208,10 @@ namespace giml {
             return *this;
         }
 
-        T processSample(T in) {
+        inline T processSample(const T& in) override {
+            if (!(this->enabled)) {
+                return in;
+            }
             //Calls the current state function depending on what state we are currently in (see private method definitions for more details)
             return CALL_PTR_TO_MEMBER_FUNCTION(*this, this->pCurrentStateFunc)(in);
 
