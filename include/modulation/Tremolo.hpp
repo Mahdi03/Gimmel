@@ -7,18 +7,22 @@ namespace giml {
     class Tremolo {
     private:
         int sampleRate;
-        float speed, depth; // if speed set at audio rate, ring modulation. If depth > 1, phase distortion 
+        float speed = 1.f;
+        float depth = 1.f; // if speed set at audio rate, ring modulation 
         giml::SinOsc osc;
 
     public:
+        Tremolo (int samprate) : sampleRate(samprate), osc(samprate) {}
+
         T processSample(T in) { 
-            float gain = osc.processSample() * 0.5 + 0.5 // waveshape SinOsc output to make it unipolar
+            float gain = osc.processSample() * 0.5 + 0.5; // waveshape SinOsc output to make it unipolar
             gain *= depth; // scale by depth
           return in * (1 - gain); // return in * waveshaped SinOsc 
         }
 
         void setSpeed(float millisPerCycle) { // set speed of LFO
-            osc.setFrequency(millisPerCycle * 0.001f); // convert to Hz (milliseconds to seconds)
+            if (millisPerCycle <= 0.05) {millisPerCycle = 0.05;} // osc frequency cieling at 20kHz to avoid aliasing
+            osc.setFrequency(1000.f / millisPerCycle); // convert to Hz (milliseconds to seconds)
         }
 
         void setDepth(float d) { // set depth
