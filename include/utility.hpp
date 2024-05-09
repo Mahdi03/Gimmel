@@ -1,5 +1,5 @@
-#ifndef UTILITY_H
-#define UTILITY_H
+#ifndef UTILITY_HPP
+#define UTILITY_HPP
 #include <math.h>
 namespace giml {
 
