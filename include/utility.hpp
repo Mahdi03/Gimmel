@@ -1,6 +1,9 @@
 #ifndef UTILITY_HPP
 #define UTILITY_HPP
+
+#define _USE_MATH_DEFINES //For M_PI
 #include <math.h>
+
 namespace giml {
 
     /**
