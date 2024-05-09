@@ -26,6 +26,7 @@ public:
         }
         return false;
     }
+    int sampleRate = 0;
 private:
     float* pArr = nullptr;
     size_t currentIndex = 0, numberOfSamplesActuallyDecoded = 0;
@@ -37,6 +38,7 @@ private:
             std::cout << "Could not open WAV file for reading: " << filename << std::endl;
             exit(0);
         }
+        this->sampleRate = wav.sampleRate;
         int32_t* pDecodedInterleavedSamples = (int32_t*)malloc(wav.totalPCMFrameCount * wav.channels * sizeof(int32_t));
         numberOfSamplesActuallyDecoded = drwav_read_pcm_frames_s32(&wav, wav.totalPCMFrameCount, pDecodedInterleavedSamples);
         std::cout << "Channels: " << wav.channels << "\n\r Decoded: " << numberOfSamplesActuallyDecoded << "samples\r\nOther val: " << numberOfSamplesActuallyDecoded << std::endl;
