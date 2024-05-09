@@ -21,7 +21,7 @@ namespace giml {
         }
 
         T processSample(T in) {
-            buffer.writeSample(in); // write sample to delay buffer
+            this->buffer.writeSample(in); // write sample to delay buffer
 
             int readIndex = static_cast<int>(round( // readpoint 1
                 this->osc.processSample() * millisToSamples(this->windowSize, this->sampleRate))); 
