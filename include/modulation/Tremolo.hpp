@@ -7,8 +7,7 @@ namespace giml {
     class Tremolo {
     private:
         int sampleRate;
-        float speed = 1.f;
-        float depth = 1.f; // if speed set at audio rate, ring modulation 
+        float speed = 1.f, depth = 1.f; // if speed set at audio rate, ring modulation 
         giml::SinOsc osc;
 
     public:
