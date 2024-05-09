@@ -36,8 +36,8 @@ namespace giml {
     * @param sampleRate samplerate of your project
     * @return msVal translated to samples
     */
-    int millisToSamples(float msVal, int sampleRate) {
-        return msVal * sampleRate / 1000.f;
+    int millisToSamples(float msVal, int sampRate) {
+        return msVal * sampRate / 1000.f;
     }
 
     /**
@@ -48,8 +48,8 @@ namespace giml {
     * @param sampleRate samplerate of your project
     * @return numSamples translated to milliseconds
     */
-    float samplesToMillis(int numSamples, int sampleRate) {
-        return numSamples / sampleRate * 1000.f;
+    float samplesToMillis(int numSamples, int sampRate) {
+        return numSamples / sampRate * 1000.f;
     }
 
     /**
@@ -58,7 +58,7 @@ namespace giml {
     class Phasor {
     protected:
         int sampleRate;
-        float phase, frequency, phaseIncrement;
+        float phase = 0.f, frequency = 0.f, phaseIncrement = 0.f;
 
     public:
         Phasor(int sampRate) : sampleRate(sampRate) {}
@@ -79,8 +79,8 @@ namespace giml {
             return *this;
         }
 
-        virtual void setSampleRate(int samprate) {
-            sampleRate = samprate;
+        virtual void setSampleRate(int sampRate) {
+            sampleRate = sampRate;
             phaseIncrement = frequency / static_cast<float> (sampleRate);
         }
 
@@ -108,7 +108,12 @@ namespace giml {
         }
 
         virtual float getPhase() { // get phase without advancing readpoint
-            return phase;
+            if (frequency < 0) { // if negative frequency...
+                return 1.f - phase; // return reverse phasor
+            }
+            else {
+                return phase; // return phasor
+            }
         }
     };
 
@@ -170,6 +175,9 @@ namespace giml {
             this->pBackingArr = (T*)calloc(this->bufferSize, sizeof(T)); //zero-fill values
         }
         //Constructor
+        // CircularBuffer(int bffrSize) {
+        //     this->allocate(bffrSize);
+        // }
         CircularBuffer() {}
         //Copy Contructor
         CircularBuffer(const CircularBuffer& c) {
@@ -192,7 +200,7 @@ namespace giml {
             for (size_t i = 0; i < this->bufferSize; i++) {
                 this->pBackingArr[i] = c.pBackingArr[i];
             }
-            return *this;
+          return *this;
         }
         ~CircularBuffer() {
             if (this->pBackingArr) {
@@ -216,147 +224,9 @@ namespace giml {
             if (readIndex < 0) {
                 readIndex += bufferSize; // circular logic
             }
-            return this->pBackingArr[readIndex];
+          return this->pBackingArr[readIndex];
         }
     };
-
-    /*
-    / <summary>
-    / To use this class, first instantiate it, and then call `.allocate()` with a given size
-    / </summary>
-    / <typeparam name="T">type of data to store</typeparam>
-    */
-     //template <typename T>
-     //class CircularBuffer {
-     //private:
-     //    T* pBackingArr = nullptr;
-     //    size_t currIndex = 0;
-     //protected:
-     //    size_t length = 0;
-     //   
-     //    inline void incrementIndex() {
-     //        if (this->currIndex >= this->length - 1) {
-     //            this->currIndex = 0;
-     //        }
-     //        else {
-     //            this->currIndex++;
-     //        }
-     //    }
-     //    inline void decrementIndex() {
-     //        if (this->currIndex <= 0) {
-     //            this->currIndex = length - 1;
-     //        }
-     //        else {
-     //            this->currIndex--;
-     //        }
-     //    }
-     //    inline void insertValueAt(int index, const T& f) {
-     //        pBackingArr[index] = f;
-     //    }
-     //public:
-     //    //Constructor
-     //    CircularBuffer() {}
-     //    CircularBuffer(bool forwardsDirection) : insertionDirection(forwardsDirection) {}
-
-
-     //    void allocate(size_t size) {
-     //        this->length = size;
-     //        this->pBackingArr = (T*)malloc(this->length * sizeof(T));
-     //        if (!(this->pBackingArr)) {
-     //            //Could not allocate a size this large in heap
-     //        }
-     //    }
-     //    ~CircularBuffer() {
-     //        if (this->pBackingArr) {
-     //            free(this->pBackingArr);
-     //        }
-     //    }
-     //    inline virtual void insertValue(const T& f) {
-     //        // We want to store these values in an order that makes convolving easier
-     //        this->insertValueAt(currIndex, f);
-     //        this->decrementIndex();
-     //    }
-     //    //inline virtual T readNextValue() {
-     //    //    //This function will decrement the array pointer and return the very next value in the array
-     //    //    T returnVal = this->at(currIndex);
-     //    //    this->incrementIndex();
-     //    //    return returnVal;
-     //    //}
-     //    inline T at(const size_t& index) const {
-     //        return this->pBackingArr[index];
-     //    }
-     //    inline size_t size() const {
-     //        return this->length;
-     //    }
-     //};
-    
-     //template <typename T>
-     //class CircularBufferForOscilloscope : public CircularBuffer<T> {
-     //    /*
-     //    For this class we want to insert a value, and then read all the values up to the last value which is the newly inserted value
-
-     //    */
-     //private:
-     //    int currWriteIndex = 0, currReadIndex = 0;
-
-     //    inline void incrementWriteIndex() {
-     //        if (this->currWriteIndex >= this->length - 1) {
-     //            this->currWriteIndex = 0;
-     //        }
-     //        else {
-     //            this->currWriteIndex++;
-     //        }
-     //    }
-     //    inline void decrementWriteIndex() {
-     //        if (this->currWriteIndex <= 0) {
-     //            this->currWriteIndex = length - 1;
-     //        }
-     //        else {
-     //            this->currWriteIndex--;
-     //        }
-     //    }
-
-     //    inline void incrementReadIndex() {
-     //        if (this->currReadIndex >= this->length - 1) {
-     //            this->currReadIndex = 0;
-     //        }
-     //        else {
-     //            this->currReadIndex++;
-     //        }
-     //    }
-     //    inline void decrementReadIndex() {
-     //        if (this->currReadIndex <= 0) {
-     //            this->currReadIndex = length - 1;
-     //        }
-     //        else {
-     //            this->currReadIndex--;
-     //        }
-     //    }
-
-     //public:
-     //    CircularBufferForOscilloscope() {
-     //        this->currReadIndex = this->currWriteIndex + 1; //Start it off by 1 since the current read index
-     //    }
-     //    ~CircularBufferForOscilloscope() {}
-
-     //    inline void writeSample(const T& f) {
-     //        this->insertValueAt(this->currWriteIndex, f);
-     //        this->incrementWriteIndex();
-     //    }
-
-     //    inline void resetReadHeadIndex() {
-     //        //Set the read index to the next place after where the previous value has been written to such that if we cycle around a full length, we will end up at the last value that has been inputted right now
-     //        this->currReadIndex = this->currWriteIndex;
-     //    }
-
-     //    inline T readNextValue() {
-     //        T returnVal = this->at(currReadIndex);
-     //        this->incrementReadIndex();
-     //        return returnVal;
-     //    }
-
-
-     //};
 
      template <typename T>
      class Effect {

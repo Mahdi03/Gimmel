@@ -22,7 +22,7 @@ namespace giml {
         }
 
         void setSpeed(float millisPerCycle) { // set speed of LFO
-            if (millisPerCycle < 0.05) {millisPerCycle = 0.05;} // osc frequency cieling at 20kHz to avoid aliasing
+            if (millisPerCycle < 0.05) {millisPerCycle = 0.05;} // osc frequency ceiling at 20kHz to avoid aliasing
             this->speed = millisPerCycle;
             this->osc.setFrequency(1000.f / this->speed); // convert to Hz (milliseconds to seconds)
         }
