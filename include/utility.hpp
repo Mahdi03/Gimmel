@@ -151,32 +151,69 @@ namespace giml {
         }
     };
 
-    class CircularBuffer { // simplest circular buffer I could think of 
-    protected:
-        static const int bufferSize = 1000000; // we can adjust this
-        int maxIndex = bufferSize - 1;
-        float buffer[bufferSize] = {0};
-        int writeIndex;
+    template <typename T>
+    class CircularBuffer {
+    private:
+        T* pBackingArr = nullptr;
+        size_t bufferSize = 0;
+        size_t writeIndex = 0;
 
     public:
-        virtual void writeSample(float input) {
-            buffer[writeIndex] = input;
-            writeIndex += 1;
-
-            if (writeIndex >= maxIndex) {
-                writeIndex -= maxIndex; // circular logic 
+        void allocate(size_t size) {
+            if (this->pBackingArr) {
+                free(this->pBackingArr);
+            }
+            this->bufferSize = size;
+            this->pBackingArr = (T*)calloc(this->bufferSize, sizeof(T)); //zero-fill values
+        }
+        //Constructor
+        CircularBuffer() {}
+        //Copy Contructor
+        CircularBuffer(const CircularBuffer& c) {
+            //There is no previous object, this object is being created new
+            //We need to deep copy over the entire array
+            this->bufferSize = c.bufferSize;
+            this->pBackingArr = (T*)calloc(bufferSize, sizeof(T));
+            for (size_t i = 0; i < this->bufferSize; i++) {
+                this->pBackingArr[i] = c.pBackingArr[i];
+            }
+        }
+        // Copy assignment constructor
+        CircularBuffer& operator=(const CircularBuffer& c) {
+            //There is a previous object here so first we need to free the previous buffer
+            if (this->pBackingArr) {
+                free(this->pBackingArr);
+            }
+            this->bufferSize = c.bufferSize;
+            this->pBackingArr = (T*)calloc(bufferSize, sizeof(T));
+            for (size_t i = 0; i < this->bufferSize; i++) {
+                this->pBackingArr[i] = c.pBackingArr[i];
+            }
+            return *this;
+        }
+        ~CircularBuffer() {
+            if (this->pBackingArr) {
+                free(pBackingArr);
             }
         }
 
-        virtual float readSample(int delayInSamples) {
-            if (delayInSamples > maxIndex) { // limit delay to maxIndex
-                delayInSamples = maxIndex;
+        void writeSample(float input) {
+            this->pBackingArr[writeIndex] = input;
+            writeIndex++;
+            if (writeIndex >= this->bufferSize) {
+                writeIndex = 0; // circular logic 
+            }
+        }
+
+        float readSample(size_t delayInSamples) {
+            if (delayInSamples >= this->bufferSize) { // limit delay to maxIndex
+                delayInSamples = this->bufferSize - 1;
             }
             int readIndex = writeIndex - delayInSamples; // calculate readIndex
             if (readIndex < 0) {
                 readIndex += bufferSize; // circular logic
             }
-            return buffer[readIndex];
+            return this->pBackingArr[readIndex];
         }
     };
 
@@ -186,157 +223,157 @@ namespace giml {
     / </summary>
     / <typeparam name="T">type of data to store</typeparam>
     */
-    // template <typename T>
-    // class CircularBuffer {
-    // private:
-    //     T* pBackingArr = nullptr;
-    //     size_t currIndex = 0;
-    // protected:
-    //     size_t length = 0;
-        
-    //     inline void incrementIndex() {
-    //         if (this->currIndex >= this->length - 1) {
-    //             this->currIndex = 0;
-    //         }
-    //         else {
-    //             this->currIndex++;
-    //         }
-    //     }
-    //     inline void decrementIndex() {
-    //         if (this->currIndex <= 0) {
-    //             this->currIndex = length - 1;
-    //         }
-    //         else {
-    //             this->currIndex--;
-    //         }
-    //     }
-    //     inline void insertValueAt(int index, const T& f) {
-    //         pBackingArr[index] = f;
-    //     }
-    // public:
-    //     //Constructor
-    //     CircularBuffer() {}
-    //     CircularBuffer(bool forwardsDirection) : insertionDirection(forwardsDirection) {}
+     //template <typename T>
+     //class CircularBuffer {
+     //private:
+     //    T* pBackingArr = nullptr;
+     //    size_t currIndex = 0;
+     //protected:
+     //    size_t length = 0;
+     //   
+     //    inline void incrementIndex() {
+     //        if (this->currIndex >= this->length - 1) {
+     //            this->currIndex = 0;
+     //        }
+     //        else {
+     //            this->currIndex++;
+     //        }
+     //    }
+     //    inline void decrementIndex() {
+     //        if (this->currIndex <= 0) {
+     //            this->currIndex = length - 1;
+     //        }
+     //        else {
+     //            this->currIndex--;
+     //        }
+     //    }
+     //    inline void insertValueAt(int index, const T& f) {
+     //        pBackingArr[index] = f;
+     //    }
+     //public:
+     //    //Constructor
+     //    CircularBuffer() {}
+     //    CircularBuffer(bool forwardsDirection) : insertionDirection(forwardsDirection) {}
 
 
-    //     void allocate(size_t size) {
-    //         this->length = size;
-    //         this->pBackingArr = (T*)malloc(this->length * sizeof(T));
-    //         if (!(this->pBackingArr)) {
-    //             //Could not allocate a size this large in heap
-    //         }
-    //     }
-    //     ~CircularBuffer() {
-    //         if (this->pBackingArr) {
-    //             free(this->pBackingArr);
-    //         }
-    //     }
-    //     inline virtual void insertValue(const T& f) {
-    //         // We want to store these values in an order that makes convolving easier
-    //         this->insertValueAt(currIndex, f);
-    //         this->decrementIndex();
-    //     }
-    //     inline virtual T readNextValue() {
-    //         //This function will decrement the array pointer and return the very next value in the array
-    //         T returnVal = this->at(currIndex);
-    //         this->incrementIndex();
-    //         return returnVal;
-    //     }
-    //     inline T at(const size_t& index) const {
-    //         return this->pBackingArr[index];
-    //     }
-    //     inline size_t size() const {
-    //         return this->length;
-    //     }
-    // };
+     //    void allocate(size_t size) {
+     //        this->length = size;
+     //        this->pBackingArr = (T*)malloc(this->length * sizeof(T));
+     //        if (!(this->pBackingArr)) {
+     //            //Could not allocate a size this large in heap
+     //        }
+     //    }
+     //    ~CircularBuffer() {
+     //        if (this->pBackingArr) {
+     //            free(this->pBackingArr);
+     //        }
+     //    }
+     //    inline virtual void insertValue(const T& f) {
+     //        // We want to store these values in an order that makes convolving easier
+     //        this->insertValueAt(currIndex, f);
+     //        this->decrementIndex();
+     //    }
+     //    //inline virtual T readNextValue() {
+     //    //    //This function will decrement the array pointer and return the very next value in the array
+     //    //    T returnVal = this->at(currIndex);
+     //    //    this->incrementIndex();
+     //    //    return returnVal;
+     //    //}
+     //    inline T at(const size_t& index) const {
+     //        return this->pBackingArr[index];
+     //    }
+     //    inline size_t size() const {
+     //        return this->length;
+     //    }
+     //};
     
-    // template <typename T>
-    // class CircularBufferForOscilloscope : public CircularBuffer<T> {
-    //     /*
-    //     For this class we want to insert a value, and then read all the values up to the last value which is the newly inserted value
+     //template <typename T>
+     //class CircularBufferForOscilloscope : public CircularBuffer<T> {
+     //    /*
+     //    For this class we want to insert a value, and then read all the values up to the last value which is the newly inserted value
 
-    //     */
-    // private:
-    //     int currWriteIndex = 0, currReadIndex = 0;
+     //    */
+     //private:
+     //    int currWriteIndex = 0, currReadIndex = 0;
 
-    //     inline void incrementWriteIndex() {
-    //         if (this->currWriteIndex >= this->length - 1) {
-    //             this->currWriteIndex = 0;
-    //         }
-    //         else {
-    //             this->currWriteIndex++;
-    //         }
-    //     }
-    //     inline void decrementWriteIndex() {
-    //         if (this->currWriteIndex <= 0) {
-    //             this->currWriteIndex = length - 1;
-    //         }
-    //         else {
-    //             this->currWriteIndex--;
-    //         }
-    //     }
+     //    inline void incrementWriteIndex() {
+     //        if (this->currWriteIndex >= this->length - 1) {
+     //            this->currWriteIndex = 0;
+     //        }
+     //        else {
+     //            this->currWriteIndex++;
+     //        }
+     //    }
+     //    inline void decrementWriteIndex() {
+     //        if (this->currWriteIndex <= 0) {
+     //            this->currWriteIndex = length - 1;
+     //        }
+     //        else {
+     //            this->currWriteIndex--;
+     //        }
+     //    }
 
-    //     inline void incrementReadIndex() {
-    //         if (this->currReadIndex >= this->length - 1) {
-    //             this->currReadIndex = 0;
-    //         }
-    //         else {
-    //             this->currReadIndex++;
-    //         }
-    //     }
-    //     inline void decrementReadIndex() {
-    //         if (this->currReadIndex <= 0) {
-    //             this->currReadIndex = length - 1;
-    //         }
-    //         else {
-    //             this->currReadIndex--;
-    //         }
-    //     }
+     //    inline void incrementReadIndex() {
+     //        if (this->currReadIndex >= this->length - 1) {
+     //            this->currReadIndex = 0;
+     //        }
+     //        else {
+     //            this->currReadIndex++;
+     //        }
+     //    }
+     //    inline void decrementReadIndex() {
+     //        if (this->currReadIndex <= 0) {
+     //            this->currReadIndex = length - 1;
+     //        }
+     //        else {
+     //            this->currReadIndex--;
+     //        }
+     //    }
 
-    // public:
-    //     CircularBufferForOscilloscope() {
-    //         this->currReadIndex = this->currWriteIndex + 1; //Start it off by 1 since the current read index
-    //     }
-    //     ~CircularBufferForOscilloscope() {}
+     //public:
+     //    CircularBufferForOscilloscope() {
+     //        this->currReadIndex = this->currWriteIndex + 1; //Start it off by 1 since the current read index
+     //    }
+     //    ~CircularBufferForOscilloscope() {}
 
-    //     inline void insertValue(const T& f) override {
-    //         this->insertValueAt(this->currWriteIndex, f);
-    //         this->incrementWriteIndex();
-    //     }
+     //    inline void writeSample(const T& f) {
+     //        this->insertValueAt(this->currWriteIndex, f);
+     //        this->incrementWriteIndex();
+     //    }
 
-    //     inline void resetReadHeadIndex() {
-    //         //Set the read index to the next place after where the previous value has been written to such that if we cycle around a full length, we will end up at the last value that has been inputted right now
-    //         this->currReadIndex = this->currWriteIndex;
-    //     }
+     //    inline void resetReadHeadIndex() {
+     //        //Set the read index to the next place after where the previous value has been written to such that if we cycle around a full length, we will end up at the last value that has been inputted right now
+     //        this->currReadIndex = this->currWriteIndex;
+     //    }
 
-    //     inline T readNextValue() override {
-    //         T returnVal = this->at(currReadIndex);
-    //         this->incrementReadIndex();
-    //         return returnVal;
-    //     }
+     //    inline T readNextValue() {
+     //        T returnVal = this->at(currReadIndex);
+     //        this->incrementReadIndex();
+     //        return returnVal;
+     //    }
 
 
-    // };
+     //};
 
-    // template <typename T>
-    // class Effect {
-    // public:
-    //     Effect() {}
-    //     virtual ~Effect() {}
-    //     virtual void enable() {
-    //         this->enabled = true;
-    //     }
+     template <typename T>
+     class Effect {
+     public:
+         Effect() {}
+         virtual ~Effect() {}
+         virtual void enable() {
+             this->enabled = true;
+         }
 
-    //     virtual void disable() {
-    //         this->enabled = false;
-    //     }
+         virtual void disable() {
+             this->enabled = false;
+         }
 
-    //     virtual inline T processSample(const T& in) {
-    //         return in;
-    //     }
+         virtual inline T processSample(const T& in) {
+             return in;
+         }
 
-    // protected:
-    //     bool enabled = false;
-    // };
+     protected:
+         bool enabled = false;
+     };
 }
 #endif

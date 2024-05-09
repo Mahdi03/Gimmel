@@ -4,7 +4,7 @@
 #include "../utility.hpp"
 namespace giml {
     template <typename T>
-    class Tremolo {
+    class Tremolo : public Effect<T> {
     private:
         int sampleRate;
         float speed = 1.f, depth = 1.f; // if speed set at audio rate, ring modulation 
