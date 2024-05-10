@@ -13,6 +13,7 @@ namespace giml {
         giml::Phasor osc;
 
     public:
+        Detune() = delete;
         Detune(int sampleRate) : sampleRate(sampleRate), osc(sampleRate) {
             this->osc.setFrequency(1000.f * ((1.f - this->pitchRatio) / this->windowSize));
             this->buffer.allocate(100000); // max windowSize is samplesToMillis(100,000)

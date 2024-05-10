@@ -24,13 +24,17 @@ public:
             currentIndex++;
             return true;
         }
+        this->restartPlayback(); //In case they want to loop it back
+        *pFloat = 0;
         return false;
     }
     int sampleRate = 0;
 private:
     float* pArr = nullptr;
     size_t currentIndex = 0, numberOfSamplesActuallyDecoded = 0;
-
+    void restartPlayback() {
+        this->currentIndex = 0;
+    }
     void openWAVFile(const char* filename) {
         drwav wav;
         if (!drwav_init_file(&wav, filename)) {
