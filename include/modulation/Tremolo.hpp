@@ -15,10 +15,13 @@ namespace giml {
             this->osc.setFrequency(1000.f / this->speed);
         }
 
-        T processSample(T in) { 
+        T processSample(T in) {
+            if (!(this->enabled)) {
+                return in;
+            }
             float gain = this->osc.processSample() * 0.5 + 0.5; // waveshape SinOsc output to make it unipolar
             gain *= this->depth; // scale by depth
-          return in * (1 - gain); // return in * waveshaped SinOsc 
+            return in * (1 - gain); // return in * waveshaped SinOsc 
         }
 
         void setSpeed(float millisPerCycle) { // set speed of LFO
