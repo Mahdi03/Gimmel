@@ -4,14 +4,15 @@
 #include "../utility.hpp"
 namespace giml {
     template <typename T>
-    class Chorus {
+    class Chorus : public Effect<T> {
     private:
         int sampleRate;
-        float rate = 1.f, depth = 100.f, blend = 0.5f;
+        float rate = 1.f, depth = 20.f, blend = 0.5f;
         giml::CircularBuffer<float> buffer;
-        giml::SinOsc osc;
+        giml::TriOsc osc;
 
     public:
+        Chorus() = delete;
         Chorus (int samprate) : sampleRate(samprate), osc(samprate) {
             this->osc.setFrequency(rate);
             this->buffer.allocate(100000); // max delay is 100,000 samples
@@ -20,9 +21,20 @@ namespace giml {
         T processSample(T in) {
             this->buffer.writeSample(in); // write sample to delay buffer
 
-            int readIndex = static_cast<int>(round(this->depth + this->depth * this->osc.processSample())); // calculate readIndex
+            if (!(this->enabled)) {
+                return in;
+            }
 
-            float output = buffer.readSample(readIndex); // get sample
+            float idealReadIndex = millisToSamples(this->depth, this->sampleRate) + 
+            (millisToSamples(this->depth, this->sampleRate) * 0.5) * this->osc.processSample();
+
+            int readIndex = int(idealReadIndex); // calculate readIndex
+            
+            int readIndex2 = readIndex + 1;
+
+            float frac = idealReadIndex - readIndex;
+
+            float output = (this->buffer.readSample(readIndex) * (1 - frac)) + (this->buffer.readSample(readIndex2) * frac); // get sample
           return output * blend + in * (1-blend); // return mix
         }
 

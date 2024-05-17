@@ -12,7 +12,7 @@ namespace giml {
 
     public:
         Delay() = delete;
-        Delay(int sampleRate) : sampleRate(sampleRate) {
+        Delay(int samprate) : sampleRate(samprate) {
             this->buffer.allocate(100000); // max delayTime is samplesToMillis(100,000)
         }
 
@@ -22,10 +22,13 @@ namespace giml {
                 return in;
             }
 
-            int readIndex = static_cast<int>(::round(millisToSamples(this->delayTime, this->sampleRate))); 
-            float output = in + this->feedback * this->buffer.readSample(readIndex);
-            this->buffer.writeSample(output); // write sample to delay buffer
-            return output;
+            int readIndex = ::round(millisToSamples(this->delayTime, this->sampleRate));
+
+            float output = this->buffer.readSample(readIndex); 
+
+            this->buffer.writeSample(in + this->feedback * output); // write sample to delay buffer
+
+          return output;
         }
 
         void setFeedback(float fbGain) {
