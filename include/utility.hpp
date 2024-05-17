@@ -3,6 +3,7 @@
 
 #define _USE_MATH_DEFINES //For M_PI
 #include <math.h>
+#define GIML_TWO_PI 6.28318530717958647692
 
 namespace giml {
 

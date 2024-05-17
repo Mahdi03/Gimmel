@@ -1,5 +1,5 @@
 #include "wav.h"
-#include "../include/modulation/Tremolo.hpp"
+#include "../include/Biquad.hpp"
 
 #include <chrono>
 static long long timeElapsed = 0L;
@@ -18,12 +18,13 @@ static long long iterations = 0L;
    }
 
 int main() {
-    WAVLoader loader { "audio/Gmaj.wav" }; //Pick an input sound to test
+    WAVLoader loader { "audio/homemadeLick.wav" }; //Pick an input sound to test
     WAVWriter writer { "audio/out.wav", loader.sampleRate };
 
-    giml::Tremolo<float> t{ loader.sampleRate };
-    t.setDepth(1.f);
-    t.setSpeed(750.f);
+    giml::Biquad<float> t{ loader.sampleRate };
+    /*t.setDepth(1.f);
+    t.setSpeed(750.f);*/
+    t.enable();
 
     float input, output;
     while (loader.readSample(&input)) { //Sample loop
