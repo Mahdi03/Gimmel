@@ -11,6 +11,7 @@ namespace giml {
         giml::SinOsc osc;
 
     public:
+        Tremolo() = delete;
         Tremolo (int samprate) : sampleRate(samprate), osc(samprate) {
             this->osc.setFrequency(1000.f / this->speed);
         }

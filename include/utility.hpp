@@ -160,6 +160,48 @@ namespace giml {
         }
     };
 
+        /**
+    * @brief Bipolar Ideal Triangle Oscillator
+    */
+    class TriOsc : public Phasor {
+    private:
+        const float pi = static_cast<float>(M_PI);
+        const float twoPi = pi * 2.f;
+
+    public:
+        TriOsc(int sampRate) : Phasor(sampRate) {}
+        // ~TriOsc() {} // idk how these should look in a derived class
+        // // Copy constructor
+        // SinOsc(const TriOsc& c) {
+        //     this->sampleRate = c.sampleRate;
+        //     this->phase = c.phase;
+        //     this->frequency = c.frequency;
+        //     this->phaseIncrement = c.phaseIncrement;
+        // }
+        // // Copy assignment constructor
+        // TriOsc& operator=(const TriOsc& c) {
+        //     this->sampleRate = c.sampleRate;
+        //     this->phase = c.phase;
+        //     this->frequency = c.frequency;
+        //     this->phaseIncrement = c.phaseIncrement;
+        //     return *this;
+        // }
+
+        float processSample() override {
+            phase += phaseIncrement; // increment phase
+            if (phase >= 1.f) { // if waveform zenith...
+                phase -= 1.f; // wrap phase
+            }
+
+            if (frequency < 0) { // if negative frequency...
+                return fabs((1 - phase) * 2 - 1) * 2 - 1; // return reverse phasor
+            }
+            else {
+                return fabs(phase * 2 - 1) * 2 - 1; // return phasor
+            }
+        }
+    };
+
     template <typename T>
     class CircularBuffer {
     private:
@@ -173,23 +215,22 @@ namespace giml {
                 free(this->pBackingArr);
             }
             this->bufferSize = size;
-            this->pBackingArr = (T*)calloc(this->bufferSize, sizeof(T)); //zero-fill values
+            this->pBackingArr = (T*)calloc(this->bufferSize, sizeof(T)); // zero-fill values
         }
         //Constructor
-        // CircularBuffer(int bffrSize) {
-        //     this->allocate(bffrSize);
-        // }
         CircularBuffer() {}
+
         //Copy Contructor
         CircularBuffer(const CircularBuffer& c) {
-            //There is no previous object, this object is being created new
-            //We need to deep copy over the entire array
+            // There is no previous object, this object is being created new
+            // We need to deep copy over the entire array
             this->bufferSize = c.bufferSize;
             this->pBackingArr = (T*)calloc(bufferSize, sizeof(T));
             for (size_t i = 0; i < this->bufferSize; i++) {
                 this->pBackingArr[i] = c.pBackingArr[i];
             }
         }
+        
         // Copy assignment constructor
         CircularBuffer& operator=(const CircularBuffer& c) {
             //There is a previous object here so first we need to free the previous buffer
