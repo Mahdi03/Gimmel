@@ -99,8 +99,8 @@ namespace giml {
             this->a0 = (Beta - gamma) / 2;
             this->a1 = Beta - gamma;
             this->a2 = this->a0;
-            this->b1 = -2*gamma;
-            this->b2 = 2*Beta -1;
+            this->b1 = -2 * gamma;
+            this->b2 = 2 * Beta - 1;
 
             this->wet = 1;
             this->dry = 0;
@@ -169,7 +169,7 @@ namespace giml {
             //Q is fixed to sqrt(2) to avoid resonance
             float C = 1 / ::tanf(M_PI * cutoffFrequency / this->sampleRate);
             float CSquared = C * C;
-            
+
             this->a0 = 1 / (1 + M_SQRT2 * C + CSquared);
             this->a1 = 2 * this->a0;
             this->a2 = this->a0;
@@ -207,7 +207,7 @@ namespace giml {
             this->a0 = 1 / (1 + C);
             this->a1 = 0;
             this->a2 = -this->a0;
-            
+
             this->b1 = -this->a0 * C * D;
             this->b2 = this->a0 * (C - 1);
         }
@@ -335,7 +335,7 @@ namespace giml {
             float K = ::tanf(M_PI * centerFrequency / this->sampleRate);
             float KSquared = K * K;
             float vol = giml::dBtoA(gainDB);
-            
+
             float d = 1 + K / Q + KSquared;
             float e = 1 + K / (vol * Q) + KSquared;
 
@@ -350,7 +350,7 @@ namespace giml {
                 this->a0 = alpha / d;
                 this->a1 = Beta / d;
                 this->a2 = gamma / d;
-                
+
                 this->b1 = this->a1;
                 this->b2 = delta / d;
             }
@@ -359,9 +359,66 @@ namespace giml {
                 this->a0 = d / e;
                 this->a1 = Beta / e;
                 this->a2 = delta / e;
-                
+
                 this->b1 = Beta / e;
                 this->b2 = nu / e;
+            }
+        }
+
+        void setType(BiquadUseCase type) {
+            this->useCase = type;
+        }
+
+        void setParams(float cutoffFrequency, float Q = 0.707, float gainDB = 0.f) {
+            switch (useCase) {
+            case BiquadUseCase::PassThroughDefault:
+                std::cout << "Make sure you set filter type first before you set parameters" << std::endl;
+                break;
+            case BiquadUseCase::LPF_1st:
+                this->setParams__LPF_1st(cutoffFrequency);
+                break;
+            case BiquadUseCase::HPF_1st:
+                this->setParams__HPF_1st(cutoffFrequency);
+                break;
+            case BiquadUseCase::APF_1st:
+                this->setParams__APF_1st(cutoffFrequency);
+                break;
+            case BiquadUseCase::LPF_2nd:
+                this->setParams__LPF_2nd(cutoffFrequency, Q);
+                break;
+            case BiquadUseCase::HPF_2nd:
+                this->setParams__HPF_2nd(cutoffFrequency, Q);
+                break;
+            case BiquadUseCase::BSF:
+                this->setParams__BSF(cutoffFrequency, Q);
+                break;
+            case BiquadUseCase::LPF_Butterworth:
+                this->setParams__LPF_Butterworth(cutoffFrequency);
+                break;
+            case BiquadUseCase::HPF_Butterworth:
+                this->setParams__HPF_Butterworth(cutoffFrequency);
+                break;
+            case BiquadUseCase::BSF_Butterworth:
+                this->setParams__BSF_Butterworth(cutoffFrequency, Q);
+                break;
+            case BiquadUseCase::APF_2nd:
+                this->setParams__APF_2nd(cutoffFrequency, Q);
+                break;
+            case BiquadUseCase::PEQ_constQ:
+                this->setParams__PEQ_constQ(cutoffFrequency, Q, gainDB);
+                break;
+            case BiquadUseCase::BPF:
+                this->setParams__BPF(cutoffFrequency, Q);
+                break;
+            case BiquadUseCase::BPF_Butterworth:
+                this->setParams__BPF_Butterworth(cutoffFrequency, Q);
+                break;
+            case BiquadUseCase::LSF:
+                this->setParams__LSF(cutoffFrequency, gainDB);
+                break;
+            case BiquadUseCase::HSF:
+                this->setParams__HSF(cutoffFrequency, gainDB);
+                break;
             }
         }
 
