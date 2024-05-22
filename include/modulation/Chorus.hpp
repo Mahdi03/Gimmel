@@ -3,6 +3,11 @@
 #include <math.h>
 #include "../utility.hpp"
 namespace giml {
+    /**
+     * @brief This class implements a basic chorus effect
+     * @tparam T floating-point type for input and output sample data such as `float`, `double`, or `long double`,
+     * up to user what precision they are looking for (float is more performant)
+     */
     template <typename T>
     class Chorus : public Effect<T> {
     private:
@@ -18,6 +23,14 @@ namespace giml {
             this->buffer.allocate(100000); // max delay is 100,000 samples
         }
 
+        /**
+        * @brief Writes and returns sample from delay line. Return is 100% wet
+        * @param in current sample
+        * @return `in` blended with past input. The modulation of the time between 
+        * samples creates a pitchshift via the doppler effect
+        * 
+        * TODO: encapsulate sample interpolation logic in utility.hpp
+        */
         T processSample(T in) {
             this->buffer.writeSample(in); // write sample to delay buffer
 
@@ -38,15 +51,31 @@ namespace giml {
           return output * blend + in * (1-blend); // return mix
         }
 
+        /**
+        * @brief Set modulation rate- the frequnecy of the LFO.  
+        * @param freq frequency in Hz 
+        */
         void setRate(float freq) {
             this->osc.setFrequency(freq); // set frequency in Hz
         }
 
+        /**
+        * @brief Set modulation depth- the average delay time
+        * @param freq frequency in Hz 
+        */
         void setDepth(float d) {
             this->depth = d;
         }
 
+        /**
+        * @brief Set blend 
+        * @param b ratio of wet to dry (clamped to [0,1])
+        */
         void setBlend(float b) {
+            // clamp b to [0, 1]
+            if (b > 1) {b = 1.f;} 
+            else if (b < 0) {b = 0.f;}
+            // set blend
             this->blend = b;
         }
     };
