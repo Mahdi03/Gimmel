@@ -1,7 +1,7 @@
 #ifndef UTILITY_HPP
 #define UTILITY_HPP
 
-#define _USE_MATH_DEFINES //For M_PI
+#define _USE_MATH_DEFINES //For M_PI... do we need this?
 #include <math.h>
 #define GIML_TWO_PI 6.28318530717958647692
 
@@ -34,7 +34,7 @@ namespace giml {
     * equivalent quantity of samples
     *
     * @param msVal input value in milliseconds
-    * @param sampleRate samplerate of your project
+    * @param sampleRate sample rate of your project
     * @return msVal translated to samples
     */
     int millisToSamples(float msVal, int sampRate) {
@@ -54,7 +54,9 @@ namespace giml {
     }
 
     /**
-    * @brief Phase Accumulator / Unipolar Saw Oscillator
+    * @brief Phase Accumulator / Unipolar Saw Oscillator. 
+    * Can be used as a control signal and/or waveshaped into other waveforms. 
+    * Will cause aliasing if sonified 
     */
     class Phasor {
     protected:
@@ -80,16 +82,28 @@ namespace giml {
             return *this;
         }
 
+        /**
+        * @brief Sets the oscillator's sample rate 
+        * @param sampRate sample rate of your project
+        */
         virtual void setSampleRate(int sampRate) {
             sampleRate = sampRate;
             phaseIncrement = frequency / static_cast<float> (sampleRate);
         }
 
-        virtual void setFrequency(float freq) {
-            frequency = freq;
+        /**
+        * @brief Sets the oscillator's frequency
+        * @param freqHz frequency in hertz (cycles per second)
+        */
+        virtual void setFrequency(float freqHz) {
+            frequency = freqHz;
             phaseIncrement = abs(frequency) / static_cast<float> (sampleRate);
         }
 
+        /**
+        * @brief Increments and returns `phase` 
+        * @return `phase` (after increment)
+        */
         virtual float processSample() {
             phase += phaseIncrement; // increment phase
             if (phase >= 1.f) { // if waveform zenith...
@@ -104,28 +118,35 @@ namespace giml {
             }
         }
 
+        /**
+        * @brief Sets `phase` manually 
+        * @param ph User-defined phase 
+        * (will be wrapped to the range [0,1] by processSample()) 
+        */
         virtual void setPhase(float ph) { // set phase manually 
             phase = ph;
         }
-
-        virtual float getPhase() { // get phase without advancing readpoint
-            if (frequency < 0) { // if negative frequency...
-                return 1.f - phase; // return reverse phasor
+        
+        /**
+        * @brief Returns `phase` without incrementing. 
+        * If `frequency` is negative, returns `1 - phase`
+        * @return `phase` 
+        */
+        virtual float getPhase() {
+            if (this->frequency < 0) { // if negative frequency...
+                return 1.f - this->phase; // return reverse phasor
             }
             else {
-                return phase; // return phasor
+                return this->phase; // return phasor
             }
         }
     };
 
     /**
-    * @brief Bipolar Sine Oscillator
+    * @brief Bipolar Sine Oscillator that inherits from `giml::phasor`. 
+    * Implemented as an ideal unipolar saw wave waveshaped with `sinf`
     */
     class SinOsc : public Phasor {
-    private:
-        const float pi = static_cast<float>(M_PI);
-        const float twoPi = pi * 2.f;
-
     public:
         SinOsc(int sampRate) : Phasor(sampRate) {}
         // ~SinOsc() {} // idk how these should look in a derived class
@@ -144,7 +165,11 @@ namespace giml {
         //     this->phaseIncrement = c.phaseIncrement;
         //     return *this;
         // }
-
+        
+        /**
+        * @brief Increments and returns `phase` 
+        * @return `sinf(phase)` (after increment)
+        */
         float processSample() override {
             phase += phaseIncrement; // increment phase
             if (phase >= 1.f) { // if waveform zenith...
@@ -152,22 +177,19 @@ namespace giml {
             }
 
             if (frequency < 0) { // if negative frequency...
-                return sinf(twoPi * (1.f - phase)); // return reverse phasor
-            }
+                return ::sinf(GIML_TWO_PI * (1.f - this->phase)); // return reverse phasor
+            } 
             else {
-                return sinf(twoPi * phase); // return phasor
+                return ::sinf(GIML_TWO_PI * this->phase); // return phasor
             }
         }
     };
 
-        /**
-    * @brief Bipolar Ideal Triangle Oscillator
+    /**
+    * @brief Bipolar Ideal Triangle Oscillator that inherits from `giml::phasor`
+    * Best used as a control signal, will cause aliasing if sonified 
     */
     class TriOsc : public Phasor {
-    private:
-        const float pi = static_cast<float>(M_PI);
-        const float twoPi = pi * 2.f;
-
     public:
         TriOsc(int sampRate) : Phasor(sampRate) {}
         // ~TriOsc() {} // idk how these should look in a derived class
@@ -187,6 +209,10 @@ namespace giml {
         //     return *this;
         // }
 
+        /**
+        * @brief Increments and returns `phase` 
+        * @return Waveshaped `phase` (after increment)
+        */
         float processSample() override {
             phase += phaseIncrement; // increment phase
             if (phase >= 1.f) { // if waveform zenith...
@@ -202,6 +228,10 @@ namespace giml {
         }
     };
 
+
+    /**
+    * @brief Circular buffer implementation, handy for effects that require a delay line
+    */
     template <typename T>
     class CircularBuffer {
     private:
@@ -210,6 +240,10 @@ namespace giml {
         size_t writeIndex = 0;
 
     public:
+        /**
+        * @brief function that allocates an array of `size` indices
+        * @param size in a delay line, the number of past samples stored
+        */
         void allocate(size_t size) {
             if (this->pBackingArr) {
                 free(this->pBackingArr);
@@ -217,6 +251,7 @@ namespace giml {
             this->bufferSize = size;
             this->pBackingArr = (T*)calloc(this->bufferSize, sizeof(T)); // zero-fill values
         }
+
         //Constructor
         CircularBuffer() {}
 
@@ -250,6 +285,10 @@ namespace giml {
             }
         }
 
+        /**
+        * @brief Writes a new sample to the buffer
+        * @param input sample value
+        */
         void writeSample(float input) {
             this->pBackingArr[writeIndex] = input;
             writeIndex++;
@@ -258,6 +297,11 @@ namespace giml {
             }
         }
 
+        /**
+        * @brief Reads a sample from the buffer
+        * @param delayInSamples access a sample this many samples ago
+        * @return `buffer[writeIndex - delayInSamples]`
+        */
         float readSample(size_t delayInSamples) {
             if (delayInSamples >= this->bufferSize) { // limit delay to maxIndex
                 delayInSamples = this->bufferSize - 1;
@@ -270,25 +314,28 @@ namespace giml {
         }
     };
 
-     template <typename T>
-     class Effect {
-     public:
-         Effect() {}
-         virtual ~Effect() {}
-         virtual void enable() {
-             this->enabled = true;
-         }
+    /**
+    * @brief Effect class that implements a bypass switch (enabled by default)
+    */
+    template <typename T>
+    class Effect {
+    public:
+        Effect() {}
+        virtual ~Effect() {}
+        virtual void enable() {
+            this->enabled = true;
+        }
 
-         virtual void disable() {
-             this->enabled = false;
-         }
+        virtual void disable() {
+            this->enabled = false;
+        }
 
-         virtual inline T processSample(const T& in) {
-             return in;
-         }
+        virtual inline T processSample(const T& in) {
+            return in;
+        }
 
-     protected:
-         bool enabled = false;
-     };
+    protected:
+        bool enabled = false;
+    };
 }
 #endif
