@@ -24,14 +24,13 @@ namespace giml {
         }
 
         /**
-        * @brief Writes and returns sample from delay line. 
-        * Return is blended with `in`
-        * @param in current sample
-        * @return `in` blended with past input. The modulation of the time between 
-        * samples creates a pitchshift via the doppler effect
-        * 
-        * TODO: encapsulate sample interpolation logic in utility.hpp
-        */
+         * @brief Writes and returns sample from delay line. 
+         * Return is blended with `in`
+         * @param in current sample
+         * @return `in` blended with past input. Changes in temporal distance 
+         * from current sample create pitch-shifting via the doppler effect 
+         * TODO: encapsulate sample interpolation logic in utility.hpp
+         */
         T processSample(T in) {
             this->buffer.writeSample(in); // write sample to delay buffer
 
@@ -53,25 +52,25 @@ namespace giml {
         }
 
         /**
-        * @brief Set modulation rate- the frequnecy of the LFO.  
-        * @param freq frequency in Hz 
-        */
+         * @brief Set modulation rate- the frequnecy of the LFO.  
+         * @param freq frequency in Hz 
+         */
         void setRate(float freq) {
             this->osc.setFrequency(freq); // set frequency in Hz
         }
 
         /**
-        * @brief Set modulation depth- the average delay time
-        * @param freq frequency in Hz 
-        */
+         * @brief Set modulation depth- the average delay time
+         * @param freq frequency in Hz 
+         */
         void setDepth(float d) {
             this->depth = d;
         }
 
         /**
-        * @brief Set blend 
-        * @param b ratio of wet to dry (clamped to [0,1])
-        */
+         * @brief Set blend 
+         * @param b ratio of wet to dry (clamped to [0,1])
+         */
         void setBlend(float b) {
             // clamp b to [0, 1]
             if (b > 1) {b = 1.f;} 
