@@ -189,6 +189,8 @@ class RealTimePlotWidget(QWidget):
             self.biquad.disable()
         else:
             self.biquad.enable()
+
+        self.biquadEnabled = not self.biquadEnabled
     
     biquadTypes = [
         Biquad.LPF_1st,
@@ -227,7 +229,7 @@ class RealTimePlotWidget(QWidget):
         signalOut = self.getSignalOut(signalIn)
         X = numpy.fft.fft(signalIn)[:self.blockSize // 2]
         Y = numpy.fft.fft(signalOut)[:self.blockSize // 2]
-
+        #numpy.any(numpy.isnan(signalOut)) or numpy.any(numpy.isinf(signalOut)) or numpy.any(numpy.isinf(Y)) or numpy.any(numpy.isnan(Y))
         H = Y / X
 
         magnitude = 20 * numpy.log10(numpy.abs(H))

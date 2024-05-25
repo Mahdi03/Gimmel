@@ -8,14 +8,13 @@ PYBIND11_MODULE(biquadWrapper, mod) {
 	//Expose the Biquad class to Python
 	pybind11::class_<giml::Biquad<float>> biquad(mod, "Biquad");
 		//And all the method functions we want exposed
-	biquad.def(pybind11::init<int>(), "Constructor", pybind11::arg("sampleRate"))
+    biquad.def(pybind11::init<int>(), "Constructor", pybind11::arg("sampleRate"))
         .def("enable", &giml::Biquad<float>::enable)
         .def("disable", &giml::Biquad<float>::disable)
-		.def("processSample", &giml::Biquad<float>::processSample)
+        .def("processSample", &giml::Biquad<float>::processSample)
         .def("setType", &giml::Biquad<float>::setType)
         .def("getType", &giml::Biquad<float>::getType)
-        .def("setParams", &giml::Biquad<float>::setParams)
-		.def("setParams__LPF_1st", &giml::Biquad<float>::setParams__LPF_1st);
+        .def("setParams", &giml::Biquad<float>::setParams);
 
 
     ////Export types
