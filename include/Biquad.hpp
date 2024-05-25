@@ -369,6 +369,10 @@ namespace giml {
             this->useCase = type;
         }
 
+        BiquadUseCase getType() const {
+            return this->useCase;
+        }
+
         void setParams(float cutoffFrequency, float Q = 0.707, float gainDB = 0.f) {
             switch (useCase) {
             case BiquadUseCase::PassThroughDefault:
@@ -427,6 +431,7 @@ namespace giml {
             switch (useCase) {
             case BiquadUseCase::PassThroughDefault:
                 returnVal = in;
+                std::cout << "Make sure you set filter type first before you use the Biquad struct" << std::endl;
                 break;
             case BiquadUseCase::LPF_1st:
             case BiquadUseCase::HPF_1st:
@@ -456,12 +461,11 @@ namespace giml {
 
             //TODO: Not yet implemented
             case BiquadUseCase::LPF_LR:
-                break;
             case BiquadUseCase::HPF_LR:
-                break;
             case BiquadUseCase::PEQ:
+                std::cout << "Not yet implemented!!" << std::endl;
+                returnVal = 0;
                 break;
-            
             }
 
             //Back propagate inputs and outputs
