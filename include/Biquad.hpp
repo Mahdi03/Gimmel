@@ -129,26 +129,28 @@ namespace giml {
                 break;
             case BiquadUseCase::LPF_2nd:
             case BiquadUseCase::HPF_2nd:
-            case BiquadUseCase::BSF:
             case BiquadUseCase::LPF_Butterworth:
             case BiquadUseCase::HPF_Butterworth:
-            case BiquadUseCase::BSF_Butterworth:
             case BiquadUseCase::APF_2nd:
             case BiquadUseCase::LSF:
             case BiquadUseCase::HSF:
             case BiquadUseCase::PEQ_constQ:
                 returnVal = a0 * in + a1 * prevX1 + a2*prevX2 - b1 * prevY1 - b2*prevY2;
                 break;
-            case BiquadUseCase::BPF:
+            /*case BiquadUseCase::BPF:
             case BiquadUseCase::BPF_Butterworth:
                 returnVal = a0 * in + a2 * prevX2 - b1 * prevY1 - b2 * prevY2;
-                break;
+                break;*/
             
 
             //TODO: Not yet implemented
             case BiquadUseCase::LPF_LR:
             case BiquadUseCase::HPF_LR:
             case BiquadUseCase::PEQ:
+            case BiquadUseCase::BSF:
+            case BiquadUseCase::BSF_Butterworth:
+            case BiquadUseCase::BPF:
+            case BiquadUseCase::BPF_Butterworth:
                 std::cout << "Not yet implemented!!" << std::endl;
                 returnVal = 0;
                 break;
