@@ -411,7 +411,8 @@ namespace giml {
 
             float cosss = ::cosf(cutoffAngle);
             //Conversion between Q and shelf steepness (S)
-            float gamma = ::sinf(cutoffAngle) * ::sqrtf((A * A + 1) * ((1 / (Q * Q) - 2) / (A + 1 / A)) + 2 * A);
+            //float gamma = ::sinf(cutoffAngle) * ::sqrtf((A * A + 1) * ((1 / (Q * Q) - 2) / (A + 1 / A)) + 2 * A);
+            float gamma = ::sinf(cutoffAngle) * ::sqrtf(A) / Q;
             float alpha = (A + 1) * cosss;
             float beta = (A - 1) * cosss;
             float c = (A + 1) + beta + gamma;
@@ -448,7 +449,8 @@ namespace giml {
 
             float cosss = ::cosf(cutoffAngle);
             //Conversion between Q and shelf steepness (S)
-            float gamma = ::sinf(cutoffAngle) * ::sqrtf((A * A + 1) * ((1 / (Q * Q) - 2) / (A + 1 / A)) + 2 * A);
+            //float gamma = ::sinf(cutoffAngle) * ::sqrtf((A * A + 1) * ((1 / (Q * Q) - 2) / (A + 1 / A)) + 2 * A);
+            float gamma = ::sinf(cutoffAngle) * ::sqrtf(A) / Q;
             float alpha = (A + 1) * cosss;
             float beta = (A - 1) * cosss;
             float c = (A + 1) - beta + gamma;
