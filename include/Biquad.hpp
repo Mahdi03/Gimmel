@@ -107,16 +107,16 @@ namespace giml {
                 this->setParams__BPF_Butterworth(cutoffFrequency, Q);
                 break;
             case BiquadUseCase::LSF:
-                this->setParams__LSF(cutoffFrequency, gainDB);
+                this->setParams__LSF(cutoffFrequency, Q, gainDB);
                 break;
             case BiquadUseCase::HSF:
-                this->setParams__HSF(cutoffFrequency, gainDB);
+                this->setParams__HSF(cutoffFrequency, Q, gainDB);
                 break;
             }
         }
 
         T processSample(T in) {
-            T returnVal;
+            T returnVal = {0};
             switch (useCase) {
             case BiquadUseCase::PassThroughDefault:
                 returnVal = in;
@@ -134,6 +134,8 @@ namespace giml {
             case BiquadUseCase::HPF_Butterworth:
             case BiquadUseCase::BSF_Butterworth:
             case BiquadUseCase::APF_2nd:
+            case BiquadUseCase::LSF:
+            case BiquadUseCase::HSF:
             case BiquadUseCase::PEQ_constQ:
                 returnVal = a0 * in + a1 * prevX1 + a2*prevX2 - b1 * prevY1 - b2*prevY2;
                 break;
@@ -142,11 +144,6 @@ namespace giml {
                 returnVal = a0 * in + a2 * prevX2 - b1 * prevY1 - b2 * prevY2;
                 break;
             
-            case BiquadUseCase::LSF:
-            case BiquadUseCase::HSF:
-                returnVal = in + this->wet * (a0 * in + a1 * prevX1 - b1 * prevY1);
-                break;
-
 
             //TODO: Not yet implemented
             case BiquadUseCase::LPF_LR:
@@ -155,6 +152,9 @@ namespace giml {
                 std::cout << "Not yet implemented!!" << std::endl;
                 returnVal = 0;
                 break;
+            default:
+                std::cout << "How did we get here!!" << std::endl;
+                returnVal = 0;
             }
 
             //Back propagate inputs and outputs
@@ -178,10 +178,8 @@ namespace giml {
         T a0=1, a1=0, a2=0,   //Numeratror coefficients (set a0 to 1 for default passthrough)
             b1=0, b2=0;     //Denominator coefficients
         //Past 2 x,y values
-        T prevX1, prevX2,
-            prevY1, prevY2;
-
-        float wet = 1.f, dry = 0.f; //Percentages of wet and dry mix to add
+        T prevX1 = 0, prevX2 = 0,
+            prevY1 = 0, prevY2 = 0;
 
         float cutoffFrequency = 1000.f, Q = 0.707f, gainDB = 0.f;
 
@@ -197,9 +195,6 @@ namespace giml {
             this->a2 = 0;
             this->b1 = -gamma;
             this->b2 = 0;
-
-            this->wet = 1;
-            this->dry = 0;
         }
 
         void setParams__HPF_1st(float cutoffFrequency) {
@@ -214,9 +209,6 @@ namespace giml {
             this->a2 = 0;
             this->b1 = -gamma;
             this->b2 = 0;
-
-            this->wet = 1;
-            this->dry = 0;
         }
 
         void setParams__LPF_2nd(float cutoffFrequency, float Q) {
@@ -235,9 +227,6 @@ namespace giml {
             this->a2 = this->a0;
             this->b1 = -2 * gamma;
             this->b2 = 2 * Beta - 1;
-
-            this->wet = 1;
-            this->dry = 0;
         }
 
         void setParams__HPF_2nd(float cutoffFrequency, float Q) {
@@ -256,9 +245,6 @@ namespace giml {
             this->a2 = this->a0;
             this->b1 = -2 * gamma;
             this->b2 = 2 * Beta - 1;
-
-            this->wet = 1;
-            this->dry = 0;
         }
 
         void setParams__BPF(float cutoffFrequency, float Q) {
@@ -414,16 +400,31 @@ namespace giml {
             this->b2 = -alpha;
         }
 
-        void setParams__LSF(float cutoffFrequency, float gainDB) {
+        void setParams__LSF(float cutoffFrequency, float Q, float gainDB) {
             //Set type to low-shelf if not already
             if (this->useCase != BiquadUseCase::LSF) {
                 this->useCase = BiquadUseCase::LSF;
             }
             float cutoffAngle = GIML_TWO_PI * cutoffFrequency / this->sampleRate;
-            float multiplier = giml::dBtoA(gainDB);
+            float A = giml::dBtoA(gainDB);
 
 
-            float delta = 4 * ::tanf(cutoffFrequency / 2) / (1 + multiplier);
+            float cosss = ::cosf(cutoffAngle);
+            //Conversion between Q and shelf steepness (S)
+            float gamma = ::sinf(cutoffAngle) * ::sqrtf((A * A + 1) * ((1 / (Q * Q) - 2) / (A + 1 / A)) + 2 * A);
+            float alpha = (A + 1) * cosss;
+            float beta = (A - 1) * cosss;
+            float c = (A + 1) + beta + gamma;
+
+            this->a0 = A * (A + 1 - beta + gamma) / c;
+            this->a1 = 2 * A * (A - 1 - alpha) / c;
+            this->a2 = A * (A + 1 - beta - gamma) / c;
+
+            this->b1 = -2 * (A - 1 + alpha) / c;
+            this->b2 = (A + 1 + beta - gamma) / c;
+
+
+            /*float delta = 4 * ::tanf(cutoffFrequency / 2) / (1 + A);
             float gamma = (1 - delta) / (1 + delta);
 
             this->a0 = (1 - gamma) / 2;
@@ -434,30 +435,43 @@ namespace giml {
             this->b2 = 0;
 
             this->dry = 1;
-            this->wet = multiplier - 1;
+            this->wet = A - 1;*/
         }
 
-        void setParams__HSF(float cutoffFrequency, float gainDB) {
+        void setParams__HSF(float cutoffFrequency, float Q, float gainDB) {
             //Set type to high-shelf if not already
             if (this->useCase != BiquadUseCase::HSF) {
                 this->useCase = BiquadUseCase::HSF;
             }
             float cutoffAngle = GIML_TWO_PI * cutoffFrequency / this->sampleRate;
-            float multiplier = giml::dBtoA(gainDB);
+            float A = giml::dBtoA(gainDB);
 
+            float cosss = ::cosf(cutoffAngle);
+            //Conversion between Q and shelf steepness (S)
+            float gamma = ::sinf(cutoffAngle) * ::sqrtf((A * A + 1) * ((1 / (Q * Q) - 2) / (A + 1 / A)) + 2 * A);
+            float alpha = (A + 1) * cosss;
+            float beta = (A - 1) * cosss;
+            float c = (A + 1) - beta + gamma;
 
-            float delta = (1 + multiplier) * ::tanf(cutoffFrequency / 2) / 4;
-            float gamma = (1 - delta) / (1 + delta);
+            this->a0 = A * (A + 1 + beta + gamma) / c;
+            this->a1 = -2 * A * (A - 1 + alpha) / c;
+            this->a2 = A * (A + 1 + beta - gamma) / c;
 
-            this->a0 = (1 + gamma) / 2;
-            this->a1 = -this->a0;
-            this->a2 = 0;
+            this->b1 = 2 * (A - 1 - alpha) / c;
+            this->b2 = (A + 1 - beta - gamma) / c;
 
-            this->b1 = -gamma;
-            this->b2 = 0;
+            //float delta = (1 + multiplier) * ::tanf(cutoffFrequency / 2) / 4;
+            //float gamma = (1 - delta) / (1 + delta);
 
-            this->dry = 1;
-            this->wet = multiplier - 1;
+            //this->a0 = (1 + gamma) / 2;
+            //this->a1 = -this->a0;
+            //this->a2 = 0;
+
+            //this->b1 = -gamma;
+            //this->b2 = 0;
+
+            //this->dry = 1;
+            //this->wet = multiplier - 1;
         }
 
         void setParams__PEQ_constQ(float centerFrequency, float Q, float gainDB) {
