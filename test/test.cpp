@@ -21,16 +21,24 @@ int main() {
     WAVLoader loader { "audio/homemadeLick.wav" }; //Pick an input sound to test
     WAVWriter writer { "audio/out.wav", loader.sampleRate };
 
-    giml::Biquad<float> t{ loader.sampleRate };
+    giml::Biquad<float> b{ loader.sampleRate };
     /*t.setDepth(1.f);
     t.setSpeed(750.f);*/
-    t.enable();
+    b.enable();
+    b.setType(giml::Biquad<float>::BiquadUseCase::BPF);
+    b.setParams(22395.f);
+
 
     float input, output;
+    int i = 1;
     while (loader.readSample(&input)) { //Sample loop
         //Effects go here
-        BENCHMARK_CODE_AVG(output = t.processSample(input);)
+        output = b.processSample(input);
         writer.writeSample(output); //Write modified sample to output file
+        if (i % 100 == 0) {
+            std::cout << "Wrote 100 samples" << std::endl;
+        }
+        i++;
     }
 
     return 0;

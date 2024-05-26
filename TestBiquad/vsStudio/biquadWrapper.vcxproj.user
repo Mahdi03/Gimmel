@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DebuggerFlavor>PythonDebugLaunchProvider</DebuggerFlavor>
+    <LocalDebuggerCommand>C:\Program Files\Python312\python.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>$(LocalDebuggerWorkingDirectory)graph.py</LocalDebuggerCommandArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <DebuggerFlavor>PythonDebugLaunchProvider</DebuggerFlavor>
+    <LocalDebuggerCommand>C:\Program Files\Python312\python.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>$(LocalDebuggerWorkingDirectory)graph.py</LocalDebuggerCommandArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DebuggerFlavor>PythonDebugLaunchProvider</DebuggerFlavor>
+    <LocalDebuggerCommand>C:\Program Files\Python312\python.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>$(LocalDebuggerWorkingDirectory)graph.py</LocalDebuggerCommandArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <DebuggerFlavor>PythonDebugLaunchProvider</DebuggerFlavor>
+    <LocalDebuggerCommand>C:\Program Files\Python312\python.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>$(LocalDebuggerWorkingDirectory)graph.py</LocalDebuggerCommandArguments>
+  </PropertyGroup>
+</Project>
