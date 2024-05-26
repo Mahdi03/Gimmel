@@ -387,8 +387,17 @@ namespace giml {
             if (this->useCase != BiquadUseCase::APF_2nd) {
                 this->useCase = BiquadUseCase::APF_2nd;
             }
+            float cutoffAngle = GIML_TWO_PI * cutoffFrequency / this->sampleRate;
+            float alpha = ::sinf(cutoffAngle) / (2 * Q);
 
-            float BW = cutoffFrequency / Q;
+            this->a0 = (1 - alpha) / (1 + alpha);
+            this->a1 = -2 * ::cosf(cutoffAngle) / (1 + alpha);
+            this->a2 = 1;
+
+            this->b1 = this->a1;
+            this->b2 = this->a0;
+
+            /*float BW = cutoffFrequency / Q;
             float t = ::tanf(M_PI * BW / this->sampleRate);
             float alpha = (t - 1) / (t + 1);
             float Beta = -::cosf(GIML_TWO_PI * cutoffFrequency / this->sampleRate);
@@ -397,7 +406,7 @@ namespace giml {
             this->a2 = 1;
 
             this->b1 = Beta * (1 - alpha);
-            this->b2 = -alpha;
+            this->b2 = -alpha;*/
         }
 
         void setParams__LSF(float cutoffFrequency, float Q, float gainDB) {
