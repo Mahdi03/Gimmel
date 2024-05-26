@@ -11,11 +11,6 @@ import pyqtgraph as pg
 from Debug.biquadWrapper import Biquad
 #from biquadWrapper import Biquad
 
-
-from threading import Lock
-
-myMutexLock = Lock()
-
 class UIControlsWidget(QWidget):
     def __init__(self, sampleRate):
         super().__init__()
@@ -219,25 +214,19 @@ class RealTimePlotWidget(QWidget):
     ]
 
     def updateBiquadType(self, index):
-        myMutexLock.acquire()
         self.biquad.setType(self.biquadTypes[index])
-        myMutexLock.release()
 
     def updateBiquadParams(self):
-        myMutexLock.acquire()
         self.biquad.setParams(self.uiControlsWidget.freq_slider.value(),
                               self.uiControlsWidget.q_slider.value()/10,
                               self.uiControlsWidget.gain_slider.value()/10)
-        myMutexLock.release()
 
     def getSignalOut(self, signalIn):
         return numpy.array([self.biquad.processSample(sample) for sample in signalIn])
 
     def renderPlot(self):
         signalIn = numpy.random.uniform(-1, 1, self.blockSize).astype(numpy.float32)
-        myMutexLock.acquire()
         signalOut = self.getSignalOut(signalIn)
-        myMutexLock.release()
         X = numpy.fft.fft(signalIn)[:self.blockSize // 2]
         Y = numpy.fft.fft(signalOut)[:self.blockSize // 2]
         #numpy.any(numpy.isnan(signalOut)) or numpy.any(numpy.isinf(signalOut)) or numpy.any(numpy.isinf(Y)) or numpy.any(numpy.isnan(Y))

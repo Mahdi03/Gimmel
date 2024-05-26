@@ -13,4 +13,8 @@
       <UniqueIdentifier>{5AC090A9-BA13-3D48-B272-7010E76EBD02}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="setup.py" />
+    <None Include="pyproject.toml" />
+  </ItemGroup>
 </Project>

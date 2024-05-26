@@ -1,6 +1,7 @@
 externals
 vsStudio/biquadWrapper.dir
 .vs
+.vscode
 CMakeFiles
 CMakeLists.txt.user
 CMakeCache.txt
