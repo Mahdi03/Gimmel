@@ -19,7 +19,7 @@ namespace giml {
     public:
         Chorus() = delete;
         Chorus (int samprate) : sampleRate(samprate), osc(samprate) {
-            this->osc.setFrequency(rate);
+            this->osc.setFrequency(this->rate);
             this->buffer.allocate(100000); // max delay is 100,000 samples
         }
 
@@ -52,7 +52,7 @@ namespace giml {
         }
 
         /**
-         * @brief Set modulation rate- the frequnecy of the LFO.  
+         * @brief Set modulation rate- the frequency of the LFO.  
          * @param freq frequency in Hz 
          */
         void setRate(float freq) {
