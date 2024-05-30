@@ -31,15 +31,13 @@ namespace giml {
                 gain_dB = in_dB;
             } 
             else if (in_dB <= this->thresh_dB + this->knee_dB) { // if input is inside knee
-                gain_dB + 
+                gain_dB = in_dB +  
                 ((1.f / (this->ratio - 1)) *
-                ::powf(diff + (this->knee_dB), 2.f)) /
-                (4.f * this->knee_dB);
+                ::powf(diff + this->knee_dB, 2.f)) /
+                (4.f * this->knee_dB); // knee needs to be non-zero
             } 
             else { // if input > thresh + knee
-                gain_dB = this->thresh_dB
-                //+ (diff / this->ratio)
-                ;
+                gain_dB = this->thresh_dB + (diff / this->ratio);
             }
 
             gain_dB = gain_dB - in_dB; // calculate gain attenuation 
