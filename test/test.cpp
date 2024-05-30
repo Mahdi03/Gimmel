@@ -1,5 +1,5 @@
 #include "wav.h"
-#include "../include/Biquad.hpp"
+#include "../include/Reverb.cpp"
 
 #include <chrono>
 static long long timeElapsed = 0L;
@@ -18,22 +18,56 @@ static long long iterations = 0L;
    }
 
 int main() {
+
+    /*giml::DynamicArray<float> a;
+    a.pushBack(67);
+    std::cout << a.size() << std::endl;
+    std::cout << a.getCapacity() << std::endl;
+    for (int i = 0; i < 10; i++) {
+        a.pushBack(i * 0.9f);
+    }
+    
+    giml::DynamicArray<float> b = a;
+
+    b.removeAt(4);
+    a.removeAt(3);
+    b.removeAt(7);
+
+
+    for (int i = 0; i < a.size(); i++) {
+        assert(a[i] == b[i]);
+    }
+
+    for (int i = 0; i < 12; i++) {
+        std::cout << a.popBack() << std::endl;
+    }
+
+    std::cout << "A:" << std::endl;
+    for (const float& f : a) {
+        std::cout << a.popBack() << std::endl;
+    }
+
+    std::cout << "B:" << std::endl;
+    for (const float& f : b) {
+        std::cout << b.popBack() << std::endl;
+    }*/
+
     WAVLoader loader { "audio/homemadeLick.wav" }; //Pick an input sound to test
     WAVWriter writer { "audio/out.wav", loader.sampleRate };
 
-    giml::Biquad<float> b{ loader.sampleRate };
+    giml::Reverb<float> r{ loader.sampleRate };
     /*t.setDepth(1.f);
     t.setSpeed(750.f);*/
-    b.enable();
-    b.setType(giml::Biquad<float>::BiquadUseCase::BPF);
-    b.setParams(22395.f);
+    r.enable();
+    //b.setType(giml::Biquad<float>::BiquadUseCase::BPF);
+    //r.setParams(22395.f);
 
 
     float input, output;
     int i = 1;
     while (loader.readSample(&input)) { //Sample loop
         //Effects go here
-        output = b.processSample(input);
+        output = r.processSample(input);
         writer.writeSample(output); //Write modified sample to output file
         if (i % 100 == 0) {
             std::cout << "Wrote 100 samples" << std::endl;
