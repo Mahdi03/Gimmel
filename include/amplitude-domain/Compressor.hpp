@@ -9,7 +9,7 @@ namespace giml {
     class Compressor : public Effect<T> {
     private:
         int sampleRate;
-        float thresholdB = 1.f, ratio = 1.f, knee = 1.f;
+        float thresh_dB = 0.f, ratio = 1.f, knee_dB = 1.f;
         float attackIncrement = 0.f, releaseDecrement = 0.f;
         float ramp = 1.f;
 
@@ -23,38 +23,33 @@ namespace giml {
                 return in;
             }
 
-            float magnitude = ::fabs(in);
-            float diff = magnitude - this->threshold;
-            float gain = 1.f;
+            float in_dB = giml::aTodB(in); // measure input in dB
+            float diff = in_dB - this->thresh_dB; // calculate diff from threshold 
+            float gain_dB = 0.f; // initialize gain at unity 
 
-            if (magnitude >= this->threshold) { // if samp > thresh... 
-                if (this->ramp >= 1.f) { // and ramp is max...
-                    this->ramp = 1.f;
-                    gain = 1.f - (diff * this->ratio);
-                } 
-                else { // if ramp is not...
-                    this->ramp += this->attackIncrement;
-                    gain = (1.f - (diff / denom) * this->ratio); 
-                }
+            if (in_dB < this->thresh_dB - this->knee_dB) { // if input < thresh - knee
+                gain_dB = in_dB;
             } 
-            else { // if samp < thresh...
-                if (this->ramp <= 0.f) { // and ramp is min...
-                    this->ramp = 0.f;
-                    gain = 1.f;
-                } 
-                else { // if ramp is not... 
-                    this->ramp -= this->releaseDecrement;
-                    //gain = (1.f - (this->ramp * diff * this->ratio)); // <- bug, diff would be negative here
-                    gain = 1.f;
-                }
+            else if (in_dB <= this->thresh_dB + this->knee_dB) { // if input is inside knee
+                gain_dB + 
+                ((1.f / (this->ratio - 1)) *
+                ::powf(diff + (this->knee_dB), 2.f)) /
+                (4.f * this->knee_dB);
+            } 
+            else { // if input > thresh + knee
+                gain_dB = this->thresh_dB
+                //+ (diff / this->ratio)
+                ;
             }
-          return in * gain;
+
+            gain_dB = gain_dB - in_dB; // calculate gain attenuation 
+          return in * giml::dBtoA(gain_dB); // apply gain as linear amplitude 
         }
 
         void setAttackTime(float attackMillis) {
             if (attackMillis <= 0.f) {
                 attackMillis = 0.000000000000000001f;
-                std::cout << "Attack time set to psuedo-zero value, supply a positive float" << std::endl;
+                std::cout << "Attack time set to pseudo-zero value, supply a positive float" << std::endl;
             }
             this->attackIncrement = 1.f / millisToSamples(attackMillis, this->sampleRate);
         }
@@ -62,7 +57,7 @@ namespace giml {
         void setReleaseTime(float releaseMillis) {
             if (releaseMillis <= 0.f) {
                 releaseMillis = 0.000000000000000001f;
-                std::cout << "Release time set to psuedo-zero value, supply a positive float" << std::endl;
+                std::cout << "Release time set to pseudo-zero value, supply a positive float" << std::endl;
             }
             this->releaseDecrement = 1.f / millisToSamples(releaseMillis, this->sampleRate);
         }
@@ -71,8 +66,16 @@ namespace giml {
             this->ratio = r;
         }
 
-        void setThreshold(float thresh) {
-            this->threshold = dBtoA(thresh);
+        void setThresh(float threshdB) {
+            this->thresh_dB = threshdB;
+        }
+        
+        void setKnee(float widthdB) {
+            if (widthdB <= 0.f) {
+                widthdB = 0.000000000000000001f;
+                std::cout << "Knee set to pseudo-zero value, supply a positive float" << std::endl;
+            }
+            this->knee_dB = widthdB;
         }
     };
 }
