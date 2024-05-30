@@ -5,6 +5,9 @@
 #include <math.h>
 #define GIML_TWO_PI 6.28318530717958647692
 
+#include <stdlib.h> // For malloc/calloc/free
+#include <cstring> 
+
 namespace giml {
 
     /**
@@ -289,11 +292,11 @@ namespace giml {
          * @brief Writes a new sample to the buffer
          * @param input sample value
          */
-        void writeSample(float input) {
-            this->pBackingArr[writeIndex] = input;
-            writeIndex++;
-            if (writeIndex >= this->bufferSize) {
-                writeIndex = 0; // circular logic 
+        void writeSample(T input) {
+            this->pBackingArr[this->writeIndex] = input;
+            this->writeIndex++;
+            if (this->writeIndex >= this->bufferSize) {
+                this->writeIndex = 0; // circular logic 
             }
         }
 
@@ -302,17 +305,244 @@ namespace giml {
          * @param delayInSamples access a sample this many samples ago
          * @return `buffer[writeIndex - delayInSamples]`
          */
-        float readSample(size_t delayInSamples) {
+        T readSample(size_t delayInSamples) const {
             if (delayInSamples >= this->bufferSize) { // limit delay to maxIndex
                 delayInSamples = this->bufferSize - 1;
             }
-            int readIndex = writeIndex - delayInSamples; // calculate readIndex
+            int readIndex = this->writeIndex - delayInSamples; // calculate readIndex
             if (readIndex < 0) {
-                readIndex += bufferSize; // circular logic
+                readIndex += this->bufferSize; // circular logic
             }
-          return this->pBackingArr[readIndex];
+            return this->pBackingArr[readIndex];
         }
     };
+
+    /**
+     * @brief DynamicArray implementation for when we need small resizeable arrays
+     */
+    template <typename T>
+    class DynamicArray {
+    private:
+        T* pBackingArr;
+        size_t length, initialCapacity, totalCapacity;
+
+        void resize(size_t newCapacity) {
+            T* newSpace = (T*)::realloc(this->pBackingArr, newCapacity * sizeof(T));
+            if (newCapacity > this->totalCapacity) {
+                //Then we need to 0-initialize the rest of the new space
+                ::memset((void*)(newSpace + this->totalCapacity), 0, (newCapacity - this->totalCapacity) * sizeof(T));
+            }
+            this->pBackingArr = newSpace;
+            this->totalCapacity = newCapacity;
+        }
+
+    public:
+        //Constructor
+        DynamicArray(size_t initialCapacity = 4) {
+            this->pBackingArr = (T*)::calloc(initialCapacity, sizeof(T)); //Needs to be calloc so that the data is zero-ed out
+            this->initialCapacity = initialCapacity;
+            this->totalCapacity = initialCapacity;
+            this->length = 0;
+        }
+
+        //Copy constructor
+        DynamicArray(const DynamicArray& d) {
+            this->pBackingArr = (T*)::malloc(d.totalCapacity * sizeof(T));
+            this->initialCapacity = d.initialCapacity;
+            this->totalCapacity = d.totalCapacity;
+            this->length = d.length;
+            //Deep copy over all values
+            for (int i = 0; i < d.length; i++) {
+                this->pBackingArr[i] = d.pBackingArr[i];
+            }
+        }
+        //Copy assignment operator
+        DynamicArray& operator=(const DynamicArray& d) {
+            this->pBackingArr = (T*)::malloc(d.totalCapacity * sizeof(T));
+            this->initialCapacity = d.initialCapacity;
+            this->totalCapacity = d.totalCapacity;
+            this->length = d.length;
+            //Deep copy over all values
+            for (int i = 0; i < d.length; i++) {
+                this->pBackingArr[i] = d.pBackingArr[i];
+            }
+
+            return *this;
+        }
+        //Destructor
+        ~DynamicArray() {
+            for (size_t i = 0; i < this->length; i++) {
+                this->pBackingArr[i].~T(); //Make sure to call the destructor if the object needs to be cleaned up
+            }
+            ::free(this->pBackingArr);
+        }
+
+        size_t size() const {
+            return this->length;
+        }
+
+        size_t getCapacity() const {
+            return this->totalCapacity;
+        }
+
+        void pushBack(const T& val) {
+            if (this->length == this->totalCapacity) {
+                this->resize(this->totalCapacity * 1.5); //Apparently STL lib uses 1.5 as their resize factor for vector
+            }
+            this->pBackingArr[this->length++] = val;
+        }
+
+        void removeAt(size_t indexToRemove) {
+            if (indexToRemove >= this->length || indexToRemove < 0) {
+                std::cout << "Array access out of bounds" << std::endl;
+                throw std::out_of_range("Index out of range");
+            }
+            for (size_t i = indexToRemove; i < this->length - 1; ++i) {
+                this->pBackingArr[i] = this->pBackingArr[i + 1]; //Shift all elements up by 1
+            }
+            this->length--;
+
+            //Reclaim any unused space if needed
+            if (this->length < this->totalCapacity / 2 && this->totalCapacity > 2 * this->initialCapacity) {
+                this->resize(this->totalCapacity / 2);
+            }
+        }
+
+        T popBack() { //Removes & returns the last element in the dynamic array
+            if (this->length > 0) {
+                T returnVal = (*this)[this->length - 1];
+                this->removeAt(this->length - 1);
+                return returnVal;
+            }
+            else {
+                std::cout << "Array is already empty!" << std::endl;
+            }
+        }
+
+        //Array access operators
+        T& operator[](size_t index) {
+            if (index >= this->length || index < 0) {
+                std::cout << "Array access out of bounds" << std::endl;
+                throw std::out_of_range("Index out of range");
+            }
+            return this->pBackingArr[index];
+        }
+        const T& operator[](size_t index) const {
+            if (index >= this->length || index < 0) {
+                std::cout << "Array access out of bounds" << std::endl;
+                throw std::out_of_range("Index out of range");
+            }
+            return this->pBackingArr[index];
+        }
+
+        //Iterator operators to support range-based for loop syntax
+        T* begin() {
+            return this->pBackingArr;
+        }
+
+        const T* begin() const {
+            return this->pBackingArr;
+        }
+
+        T* end() {
+            return this->pBackingArr + this->length;
+        }
+
+        const T* end() const {
+            return this->pBackingArr + this->length;
+        }
+    };
+
+
+    /**
+     * @brief Linked List implementation, handy for effects that require a delay line
+     */
+    template <typename T>
+    class LinkedList {
+    private:
+        struct Node {
+            T value;
+            Node* next;
+        };
+        Node* head = nullptr;
+        Node* tail = nullptr;
+        size_t length = 0;
+
+        void freeUpRestOfList(Node* startingNode) {
+            //Delete the rest including the `startingNode`
+            Node* currNode = startingNode;
+            Node* tempNodeToDelete = nullptr;
+            while (currNode != this->head) {
+                tempNodeToDelete = currNode;
+                currNode = currNode->next;
+                ::free(tempNodeToDelete);
+            }
+            //startingNode->next = this->head;
+        }
+    public:
+        //Constructor
+        LinkedList() {}
+        // Copy constructor
+        LinkedList(const giml::LinkedList<T>& l) {
+            if (l.length != 0) {
+                //Then we have elements to deep copy over
+                this->head = (Node*)malloc(sizeof(Node));
+                this->head->value = l.head->value; //Hopefully this is a deep copy
+                this->head->next = nullptr;
+                this->length = l.length;
+
+                Node* pCurrNode = this->head, pTheirNode = l.head->next;
+                while (pTheirNode) {
+                    Node* newNode = (Node*)malloc(sizeof(Node));
+                    newNode->value = pTheirNode->value;
+                    newNode->next = nullptr;
+
+                    //Link to previous node and continue
+                    pCurrNode->next = newNode;
+                    pCurrNode = pCurrNode->next;
+                    pTheirNode = pTheirNode->next;
+                }
+                this->tail = pCurrNode; //The last node should be the tail
+            }
+            else {
+                this->head = nullptr;
+                this->tail = nullptr;
+                this->length = 0;
+            }
+        }
+        // Copy assignment operator
+        LinkedList<T>& operator=(const giml::LinkedList<T>& l) {
+
+        }
+        //Destructor
+        ~LinkedList() {
+            // Clean up entire LinkedList
+            freeUpRestOfList(this->head);
+            //free(this->head);
+        }
+
+
+        size_t size() {
+            return this->length;
+        }
+    };
+    // template <typename T>
+    // struct isFloatingPoint {
+    //     static const bool val = false;
+    // };
+
+    // template <>
+    // struct isFloatingPoint<float> {
+    //     static const bool val = true;
+    // };
+    // template <>
+    // struct isFloatingPoint<double> {
+    //     static const bool val = true;
+    // };
+    // template <>
+    // struct isFloatingPoint<long double> {
+    //     static const bool val = true;
+    // };
 
     /**
      * @brief Effect class that implements a bypass switch (enabled by default)
