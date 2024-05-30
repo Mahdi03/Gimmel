@@ -17,8 +17,8 @@ namespace giml {
 
     public:
         Delay() = delete;
-        Delay(int samprate) : sampleRate(samprate) {
-            this->buffer.allocate(100000); // max delayTime is samplesToMillis(100,000)
+        Delay(int samprate, int maxSize=100000) : sampleRate(samprate) {
+            this->buffer.allocate(maxSize); // max delayTime is samplesToMillis(100,000)
         }
         
         /**
