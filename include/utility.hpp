@@ -4,6 +4,7 @@
 #define _USE_MATH_DEFINES //For M_PI... do we need this?
 #include <math.h>
 #define GIML_TWO_PI 6.28318530717958647692
+#define GIML_E 2.71828182845904523536028747135266250
 
 #include <stdlib.h> // For malloc/calloc/free
 #include <cstring> 
