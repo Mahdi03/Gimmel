@@ -33,7 +33,7 @@ namespace giml {
         class CombFilter;
 
         //Parallel comb filters array
-        int numCombFilters = 20;
+        int numCombFilters = 12;
         DynamicArray<CombFilter<T>> parallelCombFilters;
 
         CircularBuffer<T> delayLineSummedCombFilterOutput;
@@ -63,7 +63,7 @@ namespace giml {
             
             for (int i = 0; i < numCombFilters; i++) {
                 //Since all comb filters are in parallel, they'll use the same delay line input
-                this->parallelCombFilters.pushBack(CombFilter<T>(sampleRate, pCommonDelayLineIn)); //Initialize the n comb filters
+                this->parallelCombFilters.pushBack(CombFilter<T>(sampleRate, pCommonDelayLineIn, (i%2))); //Initialize the n comb filters
                 //Comb filters are altered in phase when feedback gains are set in `.setRoom()`
             }
 
@@ -177,8 +177,8 @@ namespace giml {
 
             //Set the LPF feedback gains
             for (int i = 0; i < this->numCombFilters; i++) {
-                float g = damping*(1-this->parallelCombFilters[i].getCombFeedbackGain());
-                parallelCombFilters[i].setLPFFeedbackGain(g);
+                float g = damping*(1-::fabs(this->parallelCombFilters[i].getCombFeedbackGain()));
+                this->parallelCombFilters[i].setLPFFeedbackGain(g);
             }
 
             //TODO: Do what we need to do for APF
@@ -243,10 +243,12 @@ namespace giml {
                 float feedbackGain = ::powf(10, -3 * delayIndex / (this->sampleRate * RT60));
                 //Flip the phase of every other comb filter
                 if (i % 2) {
-                    this->parallelCombFilters[i].setCombFeedbackGain(feedbackGain);
+                    this->parallelCombFilters[i].setCombFeedbackGain(-feedbackGain);
+                    //this->parallelCombFilters[i].setLPFFeedbackGain(-this->parallelCombFilters[i].getLPFFeedbackGain())
                 }
                 else {
-                    this->parallelCombFilters[i].setCombFeedbackGain(-feedbackGain);
+                    this->parallelCombFilters[i].setCombFeedbackGain(feedbackGain);
+                    //this->parallelCombFilters[i].setLPFFeedbackGain(-this->parallelCombFilters[i].getLPFFeedbackGain())
                 }
                 
             }
@@ -281,11 +283,11 @@ namespace giml {
         }
     private:
         
-        template <typename T>
+        template <typename U>
         class APF { //not the same as 2nd order APF present in Biquad since this is Nth-order
             /* Have APF expose out delay line so that the next stage can take from there */
         public:
-            const CircularBuffer<T>* pDelayLineOut; //Make const pointer so that it's read-only
+            const CircularBuffer<U>* pDelayLineOut; //Make const pointer so that it's read-only
             //Constructor
             APF() = delete;
             APF(int sampleRate, const CircularBuffer<T>* pDelayLineIn) : sampleRate(sampleRate), pDelayLineIn(pDelayLineIn) {
@@ -300,7 +302,7 @@ namespace giml {
                 this->pDelayLineOut = &this->delayLineOut; //Publicize out pointer for Reverb to chain components together
             }
             //Copy assignment constructor
-            APF<T>& operator=(const APF<T>& a) {
+            APF<U>& operator=(const APF<U>& a) {
                 this->sampleRate = a.sampleRate;
                 this->pDelayLineIn = a.pDelayLineIn; //Use the same delay line in
                 this->delayLineOut = a.delayLineOut;
@@ -309,44 +311,47 @@ namespace giml {
                 return *this;
             }
 
-            T processSample(T in) {
+            U processSample(U in) {
                 return in;
             }
         private:
-            const CircularBuffer<T>* pDelayLineIn; //Make const pointer so that it's read-only
-            CircularBuffer<T> delayLineOut;
+            const CircularBuffer<U>* pDelayLineIn; //Make const pointer so that it's read-only
+            CircularBuffer<U> delayLineOut;
             int sampleRate;
         };
 
-        template <typename T>
+        template <typename U>
         class CombFilter { //not necessarily a standalone effect in itself
         private:
-            const CircularBuffer<T>* pDelayLineX; //Const pointer to avoid changing the delay line, we only want to read from it
-            CircularBuffer<T> delayLineY;
+            const CircularBuffer<U>* pDelayLineX; //Const pointer to avoid changing the delay line, we only want to read from it
+            CircularBuffer<U> delayLineY;
             float CombFeedbackGain, LPFFeedbackGain;
             int delayIndex;
+            bool neg; //Boolean whether or not we want this comb filter to be on bottom
 
         public:
             //Constructor
             CombFilter() = delete;
-            CombFilter(int sampleRate, const CircularBuffer<T>* pDelayLineIn, int delayIndex=0, float combFeedbackGain=0.f, float lpfFeedbackGain=0.f) : pDelayLineX(pDelayLineIn), delayIndex(delayIndex), CombFeedbackGain(combFeedbackGain), LPFFeedbackGain(lpfFeedbackGain) {
+            CombFilter(int sampleRate, const CircularBuffer<U>* pDelayLineIn, bool negateResponse=false, int delayIndex=0, float combFeedbackGain=0.f, float lpfFeedbackGain=0.f) : pDelayLineX(pDelayLineIn), neg(negateResponse), delayIndex(delayIndex), CombFeedbackGain(combFeedbackGain), LPFFeedbackGain(lpfFeedbackGain) {
                 this->delayLineY.allocate(sampleRate * 5);
             }
             //Copy constructor
-            CombFilter(const CombFilter& c) {
+            CombFilter(const CombFilter<U>& c) {
                 this->pDelayLineX = c.pDelayLineX;
                 this->delayLineY = c.delayLineY;
                 this->delayIndex = c.delayIndex;
                 this->CombFeedbackGain = c.CombFeedbackGain;
                 this->LPFFeedbackGain = c.LPFFeedbackGain;
+                this->neg = c.neg;
             }
             //Copy assignment operator
-            CombFilter& operator=(const CombFilter& c) {
+            CombFilter<U>& operator=(const CombFilter<U>& c) {
                 this->pDelayLineX = c.pDelayLineX;
                 this->delayLineY = c.delayLineY;
                 this->delayIndex = c.delayIndex;
                 this->CombFeedbackGain = c.CombFeedbackGain;
                 this->LPFFeedbackGain = c.LPFFeedbackGain;
+                this->neg = c.neg;
 
                 return *this;
             }
@@ -370,12 +375,19 @@ namespace giml {
                 this->LPFFeedbackGain = g;
             }
 
-            T processSample(T in) {
+            float getLPFFeedbackGain() {
+                return this->LPFFeedbackGain;
+            }
+
+            U processSample(U in) {
                 // x[n-D] - g2 x[n-D-1] + g2 y[n-1] + g1 y[n-D]  (g2 = LPF gain)
                 // x[n-D] + g2 (y[n-1] - x[n-(D+1)]) + g1 y[n-D]
-                T returnVal = this->pDelayLineX->readSample(delayIndex) // x[n-D]
+                U returnVal = this->pDelayLineX->readSample(delayIndex) // x[n-D]
                     + LPFFeedbackGain * (this->delayLineY.readSample(1) - this->pDelayLineX->readSample(delayIndex+1)) // g2 (y[n-1] - x[n-(D+1)])
                     + CombFeedbackGain * this->delayLineY.readSample(delayIndex); // g1 y[n-D]
+                if (this->neg) {
+                    returnVal = -returnVal;
+                }
                 this->delayLineY.writeSample(returnVal);
                 return returnVal;
             }
