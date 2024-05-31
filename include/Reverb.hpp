@@ -283,11 +283,11 @@ namespace giml {
         }
     private:
         
-        template <typename T>
+        template <typename U>
         class APF { //not the same as 2nd order APF present in Biquad since this is Nth-order
             /* Have APF expose out delay line so that the next stage can take from there */
         public:
-            const CircularBuffer<T>* pDelayLineOut; //Make const pointer so that it's read-only
+            const CircularBuffer<U>* pDelayLineOut; //Make const pointer so that it's read-only
             //Constructor
             APF() = delete;
             APF(int sampleRate, const CircularBuffer<T>* pDelayLineIn) : sampleRate(sampleRate), pDelayLineIn(pDelayLineIn) {
@@ -302,7 +302,7 @@ namespace giml {
                 this->pDelayLineOut = &this->delayLineOut; //Publicize out pointer for Reverb to chain components together
             }
             //Copy assignment constructor
-            APF<T>& operator=(const APF<T>& a) {
+            APF<U>& operator=(const APF<U>& a) {
                 this->sampleRate = a.sampleRate;
                 this->pDelayLineIn = a.pDelayLineIn; //Use the same delay line in
                 this->delayLineOut = a.delayLineOut;
@@ -311,20 +311,20 @@ namespace giml {
                 return *this;
             }
 
-            T processSample(T in) {
+            U processSample(U in) {
                 return in;
             }
         private:
-            const CircularBuffer<T>* pDelayLineIn; //Make const pointer so that it's read-only
-            CircularBuffer<T> delayLineOut;
+            const CircularBuffer<U>* pDelayLineIn; //Make const pointer so that it's read-only
+            CircularBuffer<U> delayLineOut;
             int sampleRate;
         };
 
-        template <typename T>
+        template <typename U>
         class CombFilter { //not necessarily a standalone effect in itself
         private:
-            const CircularBuffer<T>* pDelayLineX; //Const pointer to avoid changing the delay line, we only want to read from it
-            CircularBuffer<T> delayLineY;
+            const CircularBuffer<U>* pDelayLineX; //Const pointer to avoid changing the delay line, we only want to read from it
+            CircularBuffer<U> delayLineY;
             float CombFeedbackGain, LPFFeedbackGain;
             int delayIndex;
             bool neg; //Boolean whether or not we want this comb filter to be on bottom
@@ -332,11 +332,11 @@ namespace giml {
         public:
             //Constructor
             CombFilter() = delete;
-            CombFilter(int sampleRate, const CircularBuffer<T>* pDelayLineIn, bool negateResponse=false, int delayIndex=0, float combFeedbackGain=0.f, float lpfFeedbackGain=0.f) : pDelayLineX(pDelayLineIn), neg(negateResponse), delayIndex(delayIndex), CombFeedbackGain(combFeedbackGain), LPFFeedbackGain(lpfFeedbackGain) {
+            CombFilter(int sampleRate, const CircularBuffer<U>* pDelayLineIn, bool negateResponse=false, int delayIndex=0, float combFeedbackGain=0.f, float lpfFeedbackGain=0.f) : pDelayLineX(pDelayLineIn), neg(negateResponse), delayIndex(delayIndex), CombFeedbackGain(combFeedbackGain), LPFFeedbackGain(lpfFeedbackGain) {
                 this->delayLineY.allocate(sampleRate * 5);
             }
             //Copy constructor
-            CombFilter(const CombFilter& c) {
+            CombFilter(const CombFilter<U>& c) {
                 this->pDelayLineX = c.pDelayLineX;
                 this->delayLineY = c.delayLineY;
                 this->delayIndex = c.delayIndex;
@@ -345,7 +345,7 @@ namespace giml {
                 this->neg = c.neg;
             }
             //Copy assignment operator
-            CombFilter& operator=(const CombFilter& c) {
+            CombFilter<U>& operator=(const CombFilter<U>& c) {
                 this->pDelayLineX = c.pDelayLineX;
                 this->delayLineY = c.delayLineY;
                 this->delayIndex = c.delayIndex;
@@ -379,10 +379,10 @@ namespace giml {
                 return this->LPFFeedbackGain;
             }
 
-            T processSample(T in) {
+            U processSample(U in) {
                 // x[n-D] - g2 x[n-D-1] + g2 y[n-1] + g1 y[n-D]  (g2 = LPF gain)
                 // x[n-D] + g2 (y[n-1] - x[n-(D+1)]) + g1 y[n-D]
-                T returnVal = this->pDelayLineX->readSample(delayIndex) // x[n-D]
+                U returnVal = this->pDelayLineX->readSample(delayIndex) // x[n-D]
                     + LPFFeedbackGain * (this->delayLineY.readSample(1) - this->pDelayLineX->readSample(delayIndex+1)) // g2 (y[n-1] - x[n-(D+1)])
                     + CombFeedbackGain * this->delayLineY.readSample(delayIndex); // g1 y[n-D]
                 if (this->neg) {
