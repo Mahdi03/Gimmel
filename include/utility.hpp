@@ -318,14 +318,13 @@ namespace giml {
         }
 
         /**
-         * `BROKEN!!!`
          * @brief Reads a sample from the buffer using linear interpolation 
          * @param delayInSamples access a sample this many fractional samples ago
          * @return `interpolated sample from delayInSamples ago`
          */
-        T readInterpSample(size_t delayInSamples) const {
-            int readIndex = int(delayInSamples); // sample 1
-            int readIndex2 = readIndex + 1; // sample 2
+        T readSample(float delayInSamples) const {
+            size_t readIndex = (int)(delayInSamples); // sample 1
+            size_t readIndex2 = readIndex + 1; // sample 2
             float frac = delayInSamples - readIndex; // proportion of sample 2 to blend in
 
             return  // do linear interpolation
