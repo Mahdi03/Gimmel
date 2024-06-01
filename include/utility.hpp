@@ -316,10 +316,25 @@ namespace giml {
             }
             return this->pBackingArr[readIndex];
         }
+
+        /**
+         * @brief Reads a sample from the buffer using linear interpolation
+         * @param delayInSamples access a sample this many fractional samples ago
+         * @return `interpolated sample from delayInSamples ago`
+         */
+        T readInterpSample(size_t delayInSamples) const {
+            int readIndex = int(delayInSamples); // sample 1
+            int readIndex2 = readIndex + 1; // sample 2
+            float frac = delayInSamples - readIndex; // proportion of sample 2 to blend in
+
+            return  // do linear interpolation
+                this->readSample(readIndex) * (1 - frac) 
+                + this->readSample(readIndex2) * frac; 
+        }
     };
 
     /**
-     * @brief DynamicArray implementation for when we need small resizeable arrays
+     * @brief DynamicArray implementation for when we need small resizable arrays
      */
     template <typename T>
     class DynamicArray {
