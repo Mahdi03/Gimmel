@@ -1,5 +1,5 @@
-#ifndef GIMMEL_COMPRESSOR_HPP
-#define GIMMEL_COMPRESSOR_HPP
+#ifndef GIML_COMPRESSOR_HPP
+#define GIML_COMPRESSOR_HPP
 
 #include <math.h>
 #include "../utility.hpp"
@@ -24,7 +24,7 @@ namespace giml {
             // decoupled peak detector (from Reiss et al. 2011) (Eq. 17)
             float y1 = std::max(xL, (aR * this->y1last) + ((1.f - aR) * xL)); // max (in, filt(in))
             this->y1last = y1;
-            float yL = (aA * yL_last) + ((1 - aA) * y1);
+            float yL = (aA * this->yL_last) + ((1 - aA) * y1);
             this->yL_last = yL;
           return yL;
         }
@@ -84,7 +84,7 @@ namespace giml {
                 std::cout << "Attack time set to pseudo-zero value, supply a positive float" << std::endl;
             }
             float t = attackMillis * 0.001f;
-            this->aAttack = ::powf( GIML_E , -1.f / (t * this->sampleRate) );
+            this->aAttack = ::powf( M_E , -1.f / (t * this->sampleRate) );
         }
 
         void setRelease(float releaseMillis) { // // 
@@ -93,7 +93,7 @@ namespace giml {
                 std::cout << "Release time set to pseudo-zero value, supply a positive float" << std::endl;
             }
             float t = releaseMillis * 0.001f;
-            this->aRelease = ::powf( GIML_E , -1.f / (t * this->sampleRate) );
+            this->aRelease = ::powf( M_E , -1.f / (t * this->sampleRate) );
         }
 
         void setRatio(float r) {
@@ -114,6 +114,10 @@ namespace giml {
                 std::cout << "Knee set to pseudo-zero value, supply a positive float" << std::endl;
             }
             this->knee_dB = widthdB;
+        }
+
+        void setMakeupGain(float mdB) {
+            this->setMakeupGain = mdB;
         }
     };
 }
