@@ -2,6 +2,7 @@
 #define GIML_REVERB_HPP
 
 #include "utility.hpp"
+#include "Biquad.hpp"
 
 namespace giml {
 
@@ -33,7 +34,7 @@ namespace giml {
         class CombFilter;
 
         //Parallel comb filters array
-        int numCombFilters = 12;
+        int numCombFilters = 4;
         DynamicArray<CombFilter<T>> parallelCombFilters;
 
         CircularBuffer<T> delayLineSummedCombFilterOutput;
@@ -175,10 +176,14 @@ namespace giml {
              * 
              */
 
+            //0 - 1  maps to 0 - sampleRate
+            float cutoffFreq = (1 - damping) * this->sampleRate;
+
             //Set the LPF feedback gains
             for (int i = 0; i < this->numCombFilters; i++) {
                 float g = damping*(1-::fabs(this->parallelCombFilters[i].getCombFeedbackGain()));
                 this->parallelCombFilters[i].setLPFFeedbackGain(g);
+                this->parallelCombFilters[i].setLPFCutoffFrequency(cutoffFreq);
             }
 
             //TODO: Do what we need to do for APF
@@ -241,6 +246,9 @@ namespace giml {
             for (int i = 0; i < this->numCombFilters; i++) {
                 int delayIndex = this->parallelCombFilters[i].getDelayIndex();
                 float feedbackGain = ::powf(10, -3 * delayIndex / (this->sampleRate * RT60));
+                if (feedbackGain > 0.95) {
+                    feedbackGain = 0.95;
+                } //TODO: Find a better way to clamp or be more precise
                 //Flip the phase of every other comb filter
                 if (i % 2) {
                     this->parallelCombFilters[i].setCombFeedbackGain(-feedbackGain);
@@ -273,6 +281,7 @@ namespace giml {
             for (auto& combFilter : this->parallelCombFilters) {
                 summedValue += combFilter.processSample(prev);
             }
+            summedValue /= this->numCombFilters; //Need to add this to make sure our signal stays within bounds
             //And then finally insert summedValue into the last set of comb filters
             if (this->numAfterAPFs > 0) {
                 for (auto& apf : this->afterAPFs) {
@@ -328,12 +337,15 @@ namespace giml {
             float CombFeedbackGain, LPFFeedbackGain;
             int delayIndex;
             bool neg; //Boolean whether or not we want this comb filter to be on bottom
+            Biquad<U> LPF;
+            
 
         public:
             //Constructor
             CombFilter() = delete;
-            CombFilter(int sampleRate, const CircularBuffer<U>* pDelayLineIn, bool negateResponse=false, int delayIndex=0, float combFeedbackGain=0.f, float lpfFeedbackGain=0.f) : pDelayLineX(pDelayLineIn), neg(negateResponse), delayIndex(delayIndex), CombFeedbackGain(combFeedbackGain), LPFFeedbackGain(lpfFeedbackGain) {
+            CombFilter(int sampleRate, const CircularBuffer<U>* pDelayLineIn, bool negateResponse=false, int delayIndex=0, float combFeedbackGain=0.f, float lpfFeedbackGain=0.f) : pDelayLineX(pDelayLineIn), neg(negateResponse), delayIndex(delayIndex), CombFeedbackGain(combFeedbackGain), LPFFeedbackGain(lpfFeedbackGain), LPF(sampleRate) {
                 this->delayLineY.allocate(sampleRate * 5);
+                this->LPF.setType(Biquad<U>::BiquadUseCase::LPF_1st);
             }
             //Copy constructor
             CombFilter(const CombFilter<U>& c) {
@@ -343,6 +355,7 @@ namespace giml {
                 this->CombFeedbackGain = c.CombFeedbackGain;
                 this->LPFFeedbackGain = c.LPFFeedbackGain;
                 this->neg = c.neg;
+                this->LPF = c.LPF;
             }
             //Copy assignment operator
             CombFilter<U>& operator=(const CombFilter<U>& c) {
@@ -352,6 +365,7 @@ namespace giml {
                 this->CombFeedbackGain = c.CombFeedbackGain;
                 this->LPFFeedbackGain = c.LPFFeedbackGain;
                 this->neg = c.neg;
+                this->LPF = c.LPF;
 
                 return *this;
             }
@@ -372,7 +386,11 @@ namespace giml {
             }
 
             void setLPFFeedbackGain(float g) {
-                this->LPFFeedbackGain = g;
+                this->LPFFeedbackGain =0.5f;
+            }
+
+            void setLPFCutoffFrequency(float freq) {
+                this->LPF.setParams(freq);
             }
 
             float getLPFFeedbackGain() {
@@ -382,6 +400,15 @@ namespace giml {
             U processSample(U in) {
                 // x[n-D] - g2 x[n-D-1] + g2 y[n-1] + g1 y[n-D]  (g2 = LPF gain)
                 // x[n-D] + g2 (y[n-1] - x[n-(D+1)]) + g1 y[n-D]
+                
+
+                float yn = this->delayLineY.readSample(delayIndex);
+                float FB = CombFeedbackGain * LPF.processSample(yn);
+                this->delayLineY.writeSample(in + FB);
+                return yn;
+
+
+
                 U returnVal = this->pDelayLineX->readSample(delayIndex) // x[n-D]
                     + LPFFeedbackGain * (this->delayLineY.readSample(1) - this->pDelayLineX->readSample(delayIndex+1)) // g2 (y[n-1] - x[n-(D+1)])
                     + CombFeedbackGain * this->delayLineY.readSample(delayIndex); // g1 y[n-D]

@@ -44,8 +44,54 @@ namespace giml {
             PEQ_constQ      // Parametric EQ Filter (const Q)
         };
 
+        //Constructor
         Biquad() = delete;
         Biquad(int sampleRate) : sampleRate(sampleRate) {}
+        Biquad(const Biquad<T>& b) {
+            this->useCase = b.useCase;
+
+            this->sampleRate = b.sampleRate;
+
+            this->a0 = b.a0;
+            this->a1 = b.a1;
+            this->a2 = b.a2;
+
+            this->b1 = b.b1;
+            this->b2 = b.b2;
+
+            this->prevX1 = b.prevX1;
+            this->prevX2 = b.prevX2;
+            this->prevY1 = b.prevY1;
+            this->prevY2 = b.prevY2;
+
+            this->cutoffFrequency = b.cutoffFrequency;
+            this->Q = b.Q;
+            this->gainDB = b.gainDB;
+        }
+        // Copy assignment operator
+        Biquad<T>& operator=(const Biquad<T>& b) {
+            this->useCase = b.useCase;
+
+            this->sampleRate = b.sampleRate;
+
+            this->a0 = b.a0;
+            this->a1 = b.a1;
+            this->a2 = b.a2;
+
+            this->b1 = b.b1;
+            this->b2 = b.b2;
+
+            this->prevX1 = b.prevX1;
+            this->prevX2 = b.prevX2;
+            this->prevY1 = b.prevY1;
+            this->prevY2 = b.prevY2;
+
+            this->cutoffFrequency = b.cutoffFrequency;
+            this->Q = b.Q;
+            this->gainDB = b.gainDB;
+
+            return *this;
+        }
         //TODO: Copy constructor + Copy assignment constructor
         ~Biquad() {}
 
