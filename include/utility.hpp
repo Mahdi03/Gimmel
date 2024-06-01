@@ -318,7 +318,8 @@ namespace giml {
         }
 
         /**
-         * @brief Reads a sample from the buffer using linear interpolation
+         * `BROKEN!!!`
+         * @brief Reads a sample from the buffer using linear interpolation 
          * @param delayInSamples access a sample this many fractional samples ago
          * @return `interpolated sample from delayInSamples ago`
          */
@@ -328,8 +329,8 @@ namespace giml {
             float frac = delayInSamples - readIndex; // proportion of sample 2 to blend in
 
             return  // do linear interpolation
-                this->readSample(readIndex) * (1 - frac) 
-                + this->readSample(readIndex2) * frac; 
+                (this->readSample(readIndex) * (1.f - frac)) 
+                + (this->readSample(readIndex2) * frac); 
         }
     };
 

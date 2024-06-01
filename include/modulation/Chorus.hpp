@@ -39,16 +39,16 @@ namespace giml {
             }
 
             float idealReadIndex = millisToSamples(this->depth, this->sampleRate) + 
-             (millisToSamples(this->depth, this->sampleRate) * 0.5) * this->osc.processSample();
+            (millisToSamples(this->depth, this->sampleRate) * 0.5) * this->osc.processSample();
 
-            // int readIndex = int(idealReadIndex); // calculate readIndex
+            int readIndex = int(idealReadIndex); // calculate readIndex
             
-            // int readIndex2 = readIndex + 1;
+            int readIndex2 = readIndex + 1;
 
-            // float frac = idealReadIndex - readIndex;
+            float frac = idealReadIndex - readIndex;
 
-            // float wet = (this->buffer.readSample(readIndex) * (1 - frac)) + (this->buffer.readSample(readIndex2) * frac); // get sample
-            float wet = this->buffer.readInterpSample(idealReadIndex);
+            float wet = (this->buffer.readSample(readIndex) * (1 - frac)) + (this->buffer.readSample(readIndex2) * frac); // get sample
+            //float wet = this->buffer.readInterpSample(idealReadIndex);
           return wet * blend + in * (1-blend); // return mix
         }
 
