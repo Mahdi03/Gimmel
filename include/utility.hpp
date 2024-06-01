@@ -30,6 +30,9 @@ namespace giml {
      * @return input value in dB
      */
     float aTodB(float ampVal) {
+        if (ampVal == 0) {
+            ampVal += 1e-6;
+        }
         return 20.f * ::log10f(::fabs(ampVal));
     }
 
