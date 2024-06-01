@@ -317,6 +317,10 @@ namespace giml {
             return this->pBackingArr[readIndex];
         }
 
+        T readSample(int delayInSamples) const {
+            return this->readSample((size_t)(delayInSamples));
+        }
+
         /**
          * @brief Reads a sample from the buffer using linear interpolation 
          * @param delayInSamples access a sample this many fractional samples ago

@@ -27,10 +27,10 @@ namespace giml {
         int sampleRate;
 
         //Class forward declarations (definitions down below)
-        template <typename T>
+        template <typename U>
         class APF;
 
-        template <typename T>
+        template <typename U>
         class CombFilter;
 
         //Parallel comb filters array
@@ -144,10 +144,10 @@ namespace giml {
              */
 
             //TODO: Need to interpolate indices instead of rounding them
-            int* delayIndices = (int*)calloc(this->numCombFilters, sizeof(int));
+            float* delayIndices = (float*)calloc(this->numCombFilters, sizeof(float));
             //int delayIndices[this->numCombFilters] = {0};
-            delayIndices[0] = ::round(this->sampleRate * this->param__time); //They give us max
-            delayIndices[this->numCombFilters - 1] = ::round(delayIndices[0] / 1.5f); //We know min because of the ratio restriction
+            delayIndices[0] = this->sampleRate * this->param__time; //They give us max
+            delayIndices[this->numCombFilters - 1] = delayIndices[0] / 1.5f; //We know min because of the ratio restriction
             float division = M_PI_4 / (this->numCombFilters - 1); // (pi/4)/number of intermediate comb filters we have left
             for (int i = 1; i < this->numCombFilters - 1; i++) { //Fill in the rest of the comb filters, order does not matter
                 delayIndices[i] =  delayIndices[0] * (::tanf(i * division) + 2) / 3; //maxDelay * intermediate multiplier
@@ -244,7 +244,7 @@ namespace giml {
 
             //Set comb feedback gains corresponding to the newly calculated RT60 decay time
             for (int i = 0; i < this->numCombFilters; i++) {
-                int delayIndex = this->parallelCombFilters[i].getDelayIndex();
+                float delayIndex = this->parallelCombFilters[i].getDelayIndex();
                 float feedbackGain = ::powf(10, -3 * delayIndex / (this->sampleRate * RT60));
                 if (feedbackGain > 0.95) {
                     feedbackGain = 0.95;
@@ -335,7 +335,7 @@ namespace giml {
             const CircularBuffer<U>* pDelayLineX; //Const pointer to avoid changing the delay line, we only want to read from it
             CircularBuffer<U> delayLineY;
             float CombFeedbackGain, LPFFeedbackGain;
-            int delayIndex;
+            float delayIndex;
             bool neg; //Boolean whether or not we want this comb filter to be on bottom
             Biquad<U> LPF;
             
@@ -343,7 +343,7 @@ namespace giml {
         public:
             //Constructor
             CombFilter() = delete;
-            CombFilter(int sampleRate, const CircularBuffer<U>* pDelayLineIn, bool negateResponse=false, int delayIndex=0, float combFeedbackGain=0.f, float lpfFeedbackGain=0.f) : pDelayLineX(pDelayLineIn), neg(negateResponse), delayIndex(delayIndex), CombFeedbackGain(combFeedbackGain), LPFFeedbackGain(lpfFeedbackGain), LPF(sampleRate) {
+            CombFilter(int sampleRate, const CircularBuffer<U>* pDelayLineIn, bool negateResponse=false, float delayIndex=0, float combFeedbackGain=0.f, float lpfFeedbackGain=0.f) : pDelayLineX(pDelayLineIn), neg(negateResponse), delayIndex(delayIndex), CombFeedbackGain(combFeedbackGain), LPFFeedbackGain(lpfFeedbackGain), LPF(sampleRate) {
                 this->delayLineY.allocate(sampleRate * 5);
                 this->LPF.setType(Biquad<U>::BiquadUseCase::LPF_1st);
             }
@@ -369,11 +369,12 @@ namespace giml {
 
                 return *this;
             }
-            void setDelayIndex(int delayIndex) {
+
+            void setDelayIndex(float delayIndex) {
                 this->delayIndex = delayIndex;
             }
 
-            int getDelayIndex() const {
+            float getDelayIndex() const {
                 return this->delayIndex;
             }
 
@@ -403,6 +404,9 @@ namespace giml {
                 
 
                 float yn = this->delayLineY.readSample(delayIndex);
+                 if (this->neg) {
+                    yn = -yn;
+                }
                 float FB = CombFeedbackGain * LPF.processSample(yn);
                 this->delayLineY.writeSample(in + FB);
                 return yn;
