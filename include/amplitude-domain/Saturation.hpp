@@ -3,23 +3,30 @@
 
 #include <math.h>
 #include "../utility.hpp"
+#include "../Biquad.hpp"
 
 namespace giml {
     template <typename T>
     class Saturation : public Effect<T> {
     private:
-        float drive = 1.f;
-        
+        float drive = 1.f, preAmpGain = 1.f;
+        int sampleRate, oversamplingFactor;
+        Biquad<T> antiAliasingFilter;
+        T prevX = 0;
 
     public:
-        Saturation() {}
+        Saturation(int sampleRate, int oversamplingFactor = 1) : sampleRate(sampleRate), oversamplingFactor(oversamplingFactor), antiAliasingFilter(Biquad<T>{sampleRate})  {
+            this->antiAliasingFilter.setType(Biquad<T>::BiquadUseCase::LPF_2nd);
+            this->antiAliasingFilter.setParams(this->sampleRate * oversamplingFactor / 4); //TODO: Verify this cutoff frequency
+        }
         ~Saturation() {}
         //Copy constructor
-        Saturation(const Saturation& c) {
-            this->sampleRate = c.sampleRate;
-            this->threshold = c.threshold;
-            this->ratio = c.ratio;
-            this->gain = c.gain;
+        Saturation(const Saturation& s) {
+            this->sampleRate = s.sampleRate;
+            this->oversamplingFactor = s.oversamplingFactor;
+            this->drive = s.drive;
+            this->antiAliasingFilter = s.antiAliasingFilter;
+            this->prevX = s.prevX;
         }
         //Copy assignment constructor
         Saturation& operator=(const Saturation& c) {
@@ -29,16 +36,16 @@ namespace giml {
             this->gain = c.gain;
             return *this;
         }
-
-        inline T processSample(const T& in) override {
+        
+        inline T processSample(T in) {
             if (!(this->enabled)) {
                 return in;
             }
 
             // waveshaping functions
-            float x = in;
-            float y = x;
-
+            //T x = in;
+            //float y = x;
+            /*
             // Araya & Suyama 1996
             // y = ( ((3.f * x) / 2) * (1 - (::powf(x, 2.f) / 3.f)) );
 
@@ -64,20 +71,71 @@ namespace giml {
             // else {
             //     y = 0.630035f;
             // }
+            */
             
-            // symmetrical distortion with tanh
-            y = tanhf(this->drive * x) / tanhf(this->drive);
+            in *= this->preAmpGain;
+            
+            T returnVal;
+            if (this->oversamplingFactor > 1) {
+                //TODO: Then we need to oversample, apply process
 
-            // asymmetrical distortion with 
-            // if (x >= 0) { // if x positive 
-            //     y = tanhf(1.5f * this->satCoef * x) / tanhf(1.5f * this->satCoef);
-            // }
-            // else { // if y negative 
-            //     y = tanhf(this->satCoef * x) / tanhf(this->satCoef);
-            // }
+                /*
+                1. Linear interpolation of factor-1 points in between previous sample and current sample (include current sample)
+                2. apply tan to all samples
+                3. anti-aliasing filter
+                4. decimate and return
+                */
 
-            // oversampling ?
-          return y;
+                T* arrValues = (T*) ::malloc(this->oversamplingFactor * sizeof(T));
+                //arrValues[this->oversamplingFactor - 1] = in; //Set last value in array to current input
+
+                T delta = (in - prevX) / this->oversamplingFactor;
+
+                
+
+                for (int i = 0; i < this->oversamplingFactor; i++) {
+                    arrValues[i] = in + i * delta; //Linear interpolation for each sample (1st is previous real sample and last is current input)
+                    //TODO: Apply correct distortion function here for each sample
+                    //arrValues[i] = ::tanhf(this->drive * arrValues[i]) / ::tanhf(this->drive);
+
+                    // asymmetrical distortion with 
+                    if (arrValues[i] >= 0) { // if x positive 
+                        arrValues[i] = tanhf(this->drive * arrValues[i]) / tanhf(this->drive);
+                    }
+                    else { // if x negative 
+                        arrValues[i] = tanhf(3*this->drive * arrValues[i]) / tanhf(3*this->drive);
+                    }
+
+
+                    arrValues[i] = this->antiAliasingFilter.processSample(arrValues[i]); //TODO: See if anti-aliasing LPF is actually needed
+                }
+                returnVal = 0;
+                //returnVal = arrValues[this->oversamplingFactor-1];
+                for (int i = 0; i < this->oversamplingFactor; i++) {
+                    //TODO: does averaging the values actually act as another low-pass filter?
+                    returnVal += arrValues[i];
+                }
+                returnVal /= this->oversamplingFactor;
+
+            }
+            else {
+                // symmetrical distortion with tanh
+                // returnVal = ::tanhf(this->drive * in) / ::tanhf(this->drive);
+
+                // asymmetrical distortion with 
+                 if (in >= 0) { // if x positive 
+                     returnVal = ::tanhf(1.5f * this->drive * in) / ::tanhf(1.5f * this->drive);
+                 }
+                 else { // if y negative 
+                     returnVal = ::tanhf(this->drive * in) / ::tanhf(this->drive);
+                 }
+
+                // oversampling ?
+            }
+            
+            
+            prevX = in;
+            return returnVal;
         }
 
         void setGain (float g) {
@@ -90,10 +148,17 @@ namespace giml {
 
         void setDrive (float d) {
             if (d <= 0.f) {
-                d = 0.000000000000000001f;
+                d += 1e-6;
                 std::cout << "Drive set to pseudo-zero value, supply a positive float" << std::endl;
             }
-            this->drive = d;
+            this->drive = dBtoA(d);
+        }
+
+        void setPreAmpGain(float g) {
+            if (g == 0) {
+                g += 1e-6;
+            }
+            this->preAmpGain = dBtoA(g);
         }
     };
 }
