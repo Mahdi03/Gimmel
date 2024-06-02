@@ -35,10 +35,8 @@ namespace giml {
             if (!(this->enabled)) {
                 return in;
             }
-            int readIndex = static_cast<int>(::round( // readpoint 1
-                this->osc.processSample() * millisToSamples(this->windowSize, this->sampleRate))); 
-            int readIndex2 = static_cast<int>(::round( // readpoint 2
-                (fmod(this->osc.getPhase() + 0.5f, 1)) * millisToSamples(this->windowSize, this->sampleRate))); 
+            float readIndex =  this->osc.processSample() * millisToSamples(this->windowSize, this->sampleRate); // readpoint 1
+            float readIndex2 = (::fmod(this->osc.getPhase() + 0.5f, 1)) * millisToSamples(this->windowSize, this->sampleRate); // readpoint 2
 
             float output = this->buffer.readSample(readIndex); // get sample
             float output2 = this->buffer.readSample(readIndex2); // get sample 2

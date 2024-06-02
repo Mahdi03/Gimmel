@@ -1,5 +1,5 @@
-#ifndef GIMMEL_SATURATION_HPP
-#define GIMMEL_SATURATION_HPP
+#ifndef GIML_SATURATION_HPP
+#define GIML_SATURATION_HPP
 
 #include <math.h>
 #include "../utility.hpp"
@@ -9,7 +9,7 @@ namespace giml {
     template <typename T>
     class Saturation : public Effect<T> {
     private:
-        float drive = 1.f, preAmpGain = 1.f;
+        float drive = 1.f, preAmpGain = 1.f, volume = 1.f;
         int sampleRate, oversamplingFactor;
         Biquad<T> antiAliasingFilter;
         T prevX = 0;
@@ -17,7 +17,7 @@ namespace giml {
     public:
         Saturation(int sampleRate, int oversamplingFactor = 1) : sampleRate(sampleRate), oversamplingFactor(oversamplingFactor), antiAliasingFilter(Biquad<T>{sampleRate})  {
             this->antiAliasingFilter.setType(Biquad<T>::BiquadUseCase::LPF_2nd);
-            this->antiAliasingFilter.setParams(this->sampleRate * oversamplingFactor / 4); //TODO: Verify this cutoff frequency
+            this->antiAliasingFilter.setParams(this->sampleRate * oversamplingFactor / 2); //TODO: Verify this cutoff frequency
         }
         ~Saturation() {}
         //Copy constructor
@@ -25,15 +25,19 @@ namespace giml {
             this->sampleRate = s.sampleRate;
             this->oversamplingFactor = s.oversamplingFactor;
             this->drive = s.drive;
+            this->volume = s.volume;
             this->antiAliasingFilter = s.antiAliasingFilter;
             this->prevX = s.prevX;
         }
         //Copy assignment constructor
-        Saturation& operator=(const Saturation& c) {
-            this->sampleRate = c.sampleRate;
-            this->threshold = c.threshold;
-            this->ratio = c.ratio;
-            this->gain = c.gain;
+        Saturation& operator=(const Saturation& s) {
+            this->sampleRate = s.sampleRate;
+            this->oversamplingFactor = s.oversamplingFactor;
+            this->drive = s.drive;
+            this->volume = s.volume;
+            this->antiAliasingFilter = s.antiAliasingFilter;
+            this->prevX = s.prevX;
+            
             return *this;
         }
         
@@ -124,10 +128,10 @@ namespace giml {
 
                 // asymmetrical distortion with 
                  if (in >= 0) { // if x positive 
-                     returnVal = ::tanhf(1.5f * this->drive * in) / ::tanhf(1.5f * this->drive);
+                     returnVal = ::tanhf(this->drive * in) / ::tanhf(this->drive);
                  }
                  else { // if y negative 
-                     returnVal = ::tanhf(this->drive * in) / ::tanhf(this->drive);
+                     returnVal = ::tanhf(3*this->drive * in) / ::tanhf(3*this->drive);
                  }
 
                 // oversampling ?
@@ -135,15 +139,11 @@ namespace giml {
             
             
             prevX = in;
-            return returnVal;
+            return returnVal * this->volume;
         }
 
-        void setGain (float g) {
-            this->gain = g;
-        }
-
-        void setVolume (float v) {
-            this->volume = v;
+        void setVolume(float v) {
+            this->volume = dBtoA(v);
         }
 
         void setDrive (float d) {
