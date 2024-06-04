@@ -1,7 +1,7 @@
-#ifndef GIMMEL_TREMOLO_HPP
-#define GIMMEL_TREMOLO_HPP
+#ifndef GIML_TREMOLO_HPP
+#define GIML_TREMOLO_HPP
 #include <math.h>
-#include "../utility.hpp"
+#include "Utility.hpp"
 namespace giml {
     /**
      * @brief This class implements a basic tremolo effect 

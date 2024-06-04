@@ -2,8 +2,8 @@
 #define GIML_SATURATION_HPP
 
 #include <math.h>
-#include "../utility.hpp"
-#include "../Biquad.hpp"
+#include "Utility.hpp"
+#include "Biquad.hpp"
 
 namespace giml {
     template <typename T>
