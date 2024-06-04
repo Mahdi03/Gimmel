@@ -2,7 +2,7 @@
 #define GIML_COMPRESSOR_HPP
 
 #include <math.h>
-#include "../utility.hpp"
+#include "Utility.hpp"
 
 namespace giml {
     // signal chain 
@@ -123,7 +123,7 @@ namespace giml {
         }
 
         void setMakeupGain(float mdB) {
-            this->setMakeupGain = mdB;
+            this->makeupGain_dB = mdB;
         }
     };
 }

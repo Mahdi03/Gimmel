@@ -2,7 +2,7 @@
 #define GIML_BIQUAD_HPP
 
 #include <math.h>
-#include "utility.hpp"
+#include "Utility.hpp"
 
 namespace giml {
     template <typename T>

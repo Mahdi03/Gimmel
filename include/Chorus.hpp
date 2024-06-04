@@ -1,7 +1,7 @@
-#ifndef GIMMEL_CHORUS_HPP
-#define GIMMEL_CHORUS_HPP
+#ifndef GIML_CHORUS_HPP
+#define GIML_CHORUS_HPP
 #include <math.h>
-#include "../utility.hpp"
+#include "Utility.hpp"
 namespace giml {
     /**
      * @brief This class implements a basic chorus effect

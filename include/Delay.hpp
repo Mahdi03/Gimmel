@@ -1,7 +1,7 @@
-#ifndef GIMMEL_DELAY_HPP
-#define GIMMEL_DELAY_HPP
+#ifndef GIML_DELAY_HPP
+#define GIML_DELAY_HPP
 #include <math.h>
-#include "../utility.hpp"
+#include "Utility.hpp"
 namespace giml {
     /**
      * @brief This class implements a basic delay with feedback effect

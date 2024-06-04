@@ -1,1 +1,0 @@
-This folder contains documentation material that contributes to Gimmel's utility as a tool for teaching digital audio.
