@@ -13,8 +13,8 @@ namespace giml {
     private:
         int sampleRate;
         float rate = 1.f, depth = 20.f, blend = 0.5f;
-        giml::CircularBuffer<float> buffer;
-        giml::TriOsc osc;
+        giml::CircularBuffer<T> buffer;
+        giml::TriOsc<T> osc;
 
     public:
         Chorus() = delete;
@@ -46,8 +46,8 @@ namespace giml {
             // float frac = idealReadIndex - readIndex;
             // float wet = (this->buffer.readSample(readIndex) * (1 - frac)) + (this->buffer.readSample(readIndex2) * frac); // get sample
 
-            float wet = this->buffer.readSample(idealReadIndex);
-          return wet * blend + in * (1-blend); // return mix
+            T wet = this->buffer.readSample(idealReadIndex);
+            return wet * blend + in * (1-blend); // return mix
         }
 
         /**

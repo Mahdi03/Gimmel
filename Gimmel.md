@@ -56,6 +56,7 @@ Processing tens of thousands of samples per second, the storing of past samples 
 **Delay** effects involve blending the current input sample with past values, particularly those preceding the present by an amount perceived as a discrete repeat. The resultant effect is deemed **delay** or **echo**.
 
 A delay that simply repeats an event that happened `delayTime` samples ago can be invoked by calling the `readSample()` function from a circular buffer, with `delayTime` as the argument. The basic formula is
+
 $$
 y_n = x_{n-D}
 $$
