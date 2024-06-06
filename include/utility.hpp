@@ -64,27 +64,30 @@ namespace giml {
      * Can be used as a control signal and/or waveshaped into other waveforms. 
      * Will cause aliasing if sonified 
      */
+    template <typename T>
     class Phasor {
     protected:
         int sampleRate;
-        float phase = 0.f, frequency = 0.f, phaseIncrement = 0.f;
+        T phase = 0.f, frequency = 0.f, phaseIncrement = 0.f;
 
     public:
+        Phasor() = delete;
         Phasor(int sampRate) : sampleRate(sampRate) {}
         ~Phasor() {}
         // Copy constructor
-        Phasor(const Phasor& c) {
+        Phasor(const Phasor<T>& c) {
             this->sampleRate = c.sampleRate;
             this->phase = c.phase;
             this->frequency = c.frequency;
             this->phaseIncrement = c.phaseIncrement;
         }
         // Copy assignment constructor
-        Phasor& operator=(const Phasor& c) {
+        Phasor<T>& operator=(const Phasor<T>& c) {
             this->sampleRate = c.sampleRate;
             this->phase = c.phase;
             this->frequency = c.frequency;
             this->phaseIncrement = c.phaseIncrement;
+
             return *this;
         }
 
@@ -93,8 +96,8 @@ namespace giml {
          * @param sampRate sample rate of your project
          */
         virtual void setSampleRate(int sampRate) {
-            sampleRate = sampRate;
-            phaseIncrement = frequency / static_cast<float> (sampleRate);
+            this->sampleRate = sampRate;
+            this->phaseIncrement = this->frequency / static_cast<float>(this->sampleRate);
         }
 
         /**
@@ -102,25 +105,25 @@ namespace giml {
          * @param freqHz frequency in hertz (cycles per second)
          */
         virtual void setFrequency(float freqHz) {
-            frequency = freqHz;
-            phaseIncrement = abs(frequency) / static_cast<float> (sampleRate);
+            this->frequency = freqHz;
+            this->phaseIncrement = ::fabs(this->frequency) / static_cast<T>(this->sampleRate);
         }
 
         /**
          * @brief Increments and returns `phase` 
          * @return `phase` (after increment)
          */
-        virtual float processSample() {
-            phase += phaseIncrement; // increment phase
-            if (phase >= 1.f) { // if waveform zenith...
-                phase -= 1.f; // wrap phase
+        virtual T processSample() {
+            this->phase += this->phaseIncrement; // increment phase
+            if (this->phase >= 1.f) { // if waveform zenith...
+                this->phase -= 1.f; // wrap phase
             }
 
-            if (frequency < 0) { // if negative frequency...
-                return 1.f - phase; // return reverse phasor
+            if (this->frequency < 0) { // if negative frequency...
+                return 1.f - this->phase; // return reverse phasor
             }
             else {
-                return phase; // return phasor
+                return this->phase; // return phasor
             }
         }
 
@@ -130,7 +133,7 @@ namespace giml {
          * (will be wrapped to the range [0,1] by processSample()) 
          */
         virtual void setPhase(float ph) { // set phase manually 
-            phase = ph;
+            this->phase = ph;
         }
         
         /**
@@ -152,9 +155,10 @@ namespace giml {
      * @brief Bipolar Sine Oscillator that inherits from `giml::phasor`. 
      * Implemented as an ideal unipolar saw wave waveshaped with `sinf`
      */
-    class SinOsc : public Phasor {
+    template <typename T>
+    class SinOsc : public Phasor<T> {
     public:
-        SinOsc(int sampRate) : Phasor(sampRate) {}
+        SinOsc(int sampRate) : Phasor<T>(sampRate) {}
         // ~SinOsc() {} // idk how these should look in a derived class
         // // Copy constructor
         // SinOsc(const SinOsc& c) {
@@ -176,13 +180,13 @@ namespace giml {
          * @brief Increments and returns `phase` 
          * @return `sinf(phase)` (after increment)
          */
-        float processSample() override {
-            phase += phaseIncrement; // increment phase
-            if (phase >= 1.f) { // if waveform zenith...
-                phase -= 1.f; // wrap phase
+        T processSample() override {
+            this->phase += this->phaseIncrement; // increment phase
+            if (this->phase >= 1.f) { // if waveform zenith...
+                this->phase -= 1.f; // wrap phase
             }
 
-            if (frequency < 0) { // if negative frequency...
+            if (this->frequency < 0) { // if negative frequency...
                 return ::sinf(GIML_TWO_PI * (1.f - this->phase)); // return reverse phasor
             } 
             else {
@@ -195,10 +199,12 @@ namespace giml {
      * @brief Bipolar Ideal Triangle Oscillator that inherits from `giml::phasor`
      * Best used as a control signal, will cause aliasing if sonified 
      */
-    class TriOsc : public Phasor {
+    template <typename T>
+    class TriOsc : public Phasor<T> {
     public:
-        TriOsc(int sampRate) : Phasor(sampRate) {}
+        TriOsc(int sampRate) : Phasor<T>(sampRate) {}
         // ~TriOsc() {} // idk how these should look in a derived class
+        //TODO: 
         // // Copy constructor
         // SinOsc(const TriOsc& c) {
         //     this->sampleRate = c.sampleRate;
@@ -219,17 +225,17 @@ namespace giml {
          * @brief Increments and returns `phase` 
          * @return Waveshaped `phase` (after increment)
          */
-        float processSample() override {
-            phase += phaseIncrement; // increment phase
-            if (phase >= 1.f) { // if waveform zenith...
-                phase -= 1.f; // wrap phase
+        T processSample() override {
+            this->phase += this->phaseIncrement; // increment phase
+            if (this->phase >= 1.f) { // if waveform zenith...
+                this->phase -= 1.f; // wrap phase
             }
 
-            if (frequency < 0) { // if negative frequency...
-                return fabs((1 - phase) * 2 - 1) * 2 - 1; // return reverse phasor
+            if (this->frequency < 0) { // if negative frequency...
+                return ::fabs((1 - this->phase) * 2 - 1) * 2 - 1; // return reverse phasor
             }
             else {
-                return fabs(phase * 2 - 1) * 2 - 1; // return phasor
+                return ::fabs(this->phase * 2 - 1) * 2 - 1; // return phasor
             }
         }
     };
@@ -283,8 +289,10 @@ namespace giml {
             for (size_t i = 0; i < this->bufferSize; i++) {
                 this->pBackingArr[i] = c.pBackingArr[i];
             }
-          return *this;
+            
+            return *this;
         }
+
         ~CircularBuffer() {
             if (this->pBackingArr) {
                 free(pBackingArr);
@@ -329,13 +337,17 @@ namespace giml {
          * @return `interpolated sample from delayInSamples ago`
          */
         T readSample(float delayInSamples) const {
-            size_t readIndex = (int)(delayInSamples); // sample 1
+            size_t readIndex = delayInSamples; // sample 1
             size_t readIndex2 = readIndex + 1; // sample 2
             float frac = delayInSamples - readIndex; // proportion of sample 2 to blend in
 
             return  // do linear interpolation
                 (this->readSample(readIndex) * (1.f - frac)) 
                 + (this->readSample(readIndex2) * frac); 
+        }
+
+        T readSample(double delayInSamples) const {
+            return this->readSample((float)delayInSamples);
         }
     };
 
