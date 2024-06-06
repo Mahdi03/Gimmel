@@ -55,14 +55,27 @@ Processing tens of thousands of samples per second, the storing of past samples 
 ### Delay
 **Delay** effects involve blending the current input sample with past values, particularly those preceding the present by an amount perceived as a discrete repeat. The resultant effect is deemed **delay** or **echo**.
 
-A delay that simply repeats an event that happened `delayTime` samples ago can be invoked by calling the `readSample()` function from a circular buffer, with `delayTime` as the argument. Delay effects typically have **feedback** however, where past inputs are recalled with past outputs blended in. The `feedback` parameter influences how much feedback signal is mixed in with inputs when written to the buffer. 
+A delay that simply repeats an event that happened `delayTime` samples ago can be invoked by calling the `readSample()` function from a circular buffer, with `delayTime` as the argument. The basic formula is
+$$
+y_n = x_{n-D}
+$$
+
+Where $y_n$ and $x_n$ are output and input samples at timestep $n$, and $D$ represent a delay time in samples.
+
+Delay effects typically have **feedback** however, where past inputs are recalled with past outputs blended in. The `feedback` parameter influences how much feedback signal is mixed in with inputs when written to the buffer. The revised equation is 
+
+$$
+y_n = x_{n-D} + g \times y_{n-D} 
+$$
+
+Where the added variable $g$ represents a *feedback gain* and $y_{n-D}$ represents an output sample at timestep ${n-D}$. If $g$ is set higher than $1$, the output will grow exponentially and become unstable. 
 
 ### Reverb
 **Reverb** effects mimic the physical phenomenon of acoustic reflection, where audio in a room is not only heard coming from its source but also reflected from many surfaces.
 
 Early analog reverb effects leveraged physical mediums like springs to blend current inputs with past inputs as distorted by their transduction to physical oscillation and back.  
 
-A popular reverb implementation is the [Schroeder reverb](https://ccrma.stanford.edu/~jos/pasp/Schroeder_Reverberators.html), which chains [all-pass](https://en.wikipedia.org/wiki/All-pass_filter) and [comb](https://en.wikipedia.org/wiki/Comb_filter) filters in series to simulate acoustic reflection. **Gimmel**'s reverb implementation uses only comb filters, but is derived from the Schroeder model.
+A popular reverb implementation is the [Schroeder reverb](https://ccrma.stanford.edu/~jos/pasp/Schroeder_Reverberators.html), which chains [all-pass](https://en.wikipedia.org/wiki/All-pass_filter) and [comb](https://en.wikipedia.org/wiki/Comb_filter) filters in series to simulate acoustic reflection. **Gimmel**'s reverb implementation is derived from the Schroeder model.
 
 ## Modulation Effects
 **Modulation** effects involve the manipulation of an audio signal by a periodic function, typically an elemental waveform produced by an [oscillator](https://en.wikipedia.org/wiki/Electronic_oscillator). When one signal modulates another, the signal being modified is called the **carrier** and the signal that modifies it is called the **modulator**. 
@@ -77,12 +90,18 @@ To make a tremolo effect suited for musical signal input, a **unipolar** oscilla
 ### Chorus
 **Chorus** is a popular effect that simulates the phenomenon of multiple voices sounding the same note, as is common in [choir](https://en.wikipedia.org/wiki/Choir) music. Because the exact tone produced by each singer is a few cents sharp or flat of the target frequency, and fluctuates, the resultant summed signal involves time-varying constructive and destructive interference. This is simulated by blending a signal with pitch-shifted copies of itself, whose pitch ratio with the dry signal varies over time. 
 
-**TO-DO: Explain Chorus**
+The chorus effect is produced using a modulated delay line. By modulating the delay time of a delayed copy of the signal, a pitch shift is created via the doppler effect. Increasing delay times mimic a sound source traveling away from the listener, resulting in a decrease in pitch, while decreasing delay times simulate the source moving towards the listener, resulting in an upward pitch shift. 
+
+Most choruses have a `depth` parameter that determines a center delay time with delay times modulating between `2 * depth` and `0` (no delay). Another chorus parameter is `rate`, which sets the frequency of the oscillator.
 
 ### Detune
 **Detune** is a less common but similar effect to chorus. Detune sums a signal with a copy of itself that remains at a fixed pitch interval, effectively a general-purpose pitchshift optimized for a pitch change of less than one half-step.
 
-**TO-DO: Explain Detune**
+Like chorus, the detune effect is achieved by simulating the doppler effect using a modulated delay line. The fixed pitch-change is maintained via the use of a unipolar sawtooth oscillator, whose frequency determines the amount of transposition. 
+
+A problem is presented when the waveform resets from 1 to 0 or vice verse, audible as 'click' if unaddressed. A solution is found in *gain windowing*, where the gain of the signal is smoothly ramped to zero when the click occurs, and blended with a copy whose phase is offset. 
+
+In **Gimmel**'s implementation, two copies windowed by cosine ramps are used, but there are portions of the signal where the two gains don't add up to 1 and thereby result in a lowering of the signal's volume. To perform more seamless windowing, more windows can be used.
 
 ### Phaser
 Phasing is the product of summing a signal with a delayed copy of itself. Constructive and destructive interference produce comb-like filtering that was popularized in music of the 1960s. 
