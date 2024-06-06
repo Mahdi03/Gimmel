@@ -14,8 +14,8 @@ namespace giml {
         int sampleRate;
         float pitchRatio = 1.f;
         float windowSize = 22.f;
-        giml::CircularBuffer<float> buffer;
-        giml::Phasor osc;
+        giml::CircularBuffer<T> buffer;
+        giml::Phasor<T> osc;
 
     public:
         Detune() = delete;
@@ -36,13 +36,13 @@ namespace giml {
                 return in;
             }
             float readIndex =  this->osc.processSample() * millisToSamples(this->windowSize, this->sampleRate); // readpoint 1
-            float readIndex2 = (::fmod(this->osc.getPhase() + 0.5f, 1)) * millisToSamples(this->windowSize, this->sampleRate); // readpoint 2
+            float readIndex2 = ::fmod(this->osc.getPhase() + 0.5f, 1) * millisToSamples(this->windowSize, this->sampleRate); // readpoint 2
 
-            float output = this->buffer.readSample(readIndex); // get sample
-            float output2 = this->buffer.readSample(readIndex2); // get sample 2
+            T output = this->buffer.readSample(readIndex); // get sample
+            T output2 = this->buffer.readSample(readIndex2); // get sample 2
 
-            float windowOne = ::cosf((this->osc.getPhase() - 0.5) * M_PI); // gain windowing
-            float windowTwo = ::cosf(((::fmod((this->osc.getPhase() + 0.5f), 1.f)) - 0.5) * M_PI);// ^
+            T windowOne = ::cosf((this->osc.getPhase() - 0.5) * M_PI); // gain windowing
+            T windowTwo = ::cosf((::fmod(this->osc.getPhase() + 0.5f, 1.f) - 0.5) * M_PI);// ^
             
             return output * windowOne + output2 * windowTwo; // windowed output
         }
