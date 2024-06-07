@@ -56,7 +56,7 @@ namespace giml {
      * @return numSamples translated to milliseconds
      */
     float samplesToMillis(int numSamples, int sampRate) {
-        return numSamples / sampRate * 1000.f;
+        return numSamples / (float)sampRate * 1000.f;
     }
 
     /**

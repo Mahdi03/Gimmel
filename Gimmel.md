@@ -1,14 +1,23 @@
 # **Gimmel: Beginner's Guide to Digital Audio Effects**
 
-<strong>Digital audio</strong> is a subfield of **digital signal processing** ([DSP](https://en.wikipedia.org/wiki/Digital_signal_processing)), a field that encompasses the analysis and transformation of signals using digital computers. 
+**Digital audio** is a subfield of **digital signal processing** ([DSP](https://en.wikipedia.org/wiki/Digital_signal_processing)), a field that encompasses the analysis and transformation of signals using digital computers. 
 
 To operate on real-world continuous signals with a digital computer, their amplitude is measured as discrete **samples** at a regular rate and stored as binary data. 
 
 <!--TODO: Add basic image of sampled wave here-->
 
+<!--<figure>
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Signal_Sampling.svg/600px-Signal_Sampling.svg.png" />
+<figcaption>
+</figcaption>
+</figure>-->
+
 **Digital audio effects** are achieved by mathematically transforming the values of these samples before playback, and can enhance signals with qualities desirable to the human ear. Digital audio is ubiquitous in fields ranging from music & film production to telecommunications & broadcasting. 
 
-Below is a table of contents for the effects implemented in **Gimmel**:
+The goal of **Gimmel** is to provide lightweight implementations of the most common digital audio effects, augmented by thorough documentation that gives the project pedagogical utility.
+
+The remainder of this document constitutes a guide to the effects implemented in **Gimmel**:
+
 <ul>
 <li><a href="#amplitude-domain-effects">Amplitude Domain Effects</a></li>
     <ul>
@@ -29,8 +38,7 @@ Below is a table of contents for the effects implemented in **Gimmel**:
     <li><a href="#phaser">Phaser</a></li>
     </ul>
 </ul>
-
-The goal of **Gimmel** is to provide lightweight implementations of the most common digital audio effects, augmented by thorough documentation that gives the project pedagogical utility.
+<hr />
 
 ## Amplitude Domain Effects
 Digital audio effects can be grouped into a few categories. One is **amplitude domain effects**, which, as the name implies, operate on the amplitude of signals. While audio amplitude is linear, humans hear volume on a logarithmic scale. Because amplitude is distinct from perceptual loudness, lots of tricky math goes into amplitude domain effects. Functions that map amplitude values to **decibels (dB)**, a unit that tracks perceptual loudness, are integral components. To convert a sample value to dB, the following equation is used:
@@ -53,11 +61,19 @@ Compressors typically have a delayed reaction between when the threshold is exce
 
 Most compressors also have a `knee` parameter, which affects input samples near the threshold. Compressors with a "hard knee" act with boolean logic, where an input value either triggers compression or doesn't. Compressors with a "soft knee" consider values near the threshold, compressing them gently.
 
+<!--<figure>
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Compression_knee.svg/440px-Compression_knee.svg.png" />
+<figcaption>
+</figcaption>
+</figure>-->
+
 The compressor implemented in **Gimmel** is based on a [2011 paper](https://aes2.org/publications/elibrary-page/?id=16354) from the Queen Mary University of London which surveys the history of compressor design and presents an favored implementation.  
 
 ### Saturation
 Saturation (known colloquially as 'distortion' and by its flavors overdrive, fuzz, etc) is a form of audio distortion where the peaks of a waveform are 'clipped' off, originally produced by exceeding the capacity of analog circuits. 
+
 <!--TODO: Add images of different flavors of clipping for different flavors of distortion/fuzz/overdrive/etc.-->
+
 Saturation can be conceptualized as a form of aggressive compression that brings higher frequency components of a signal to equal volume with the fundamental, while also introducing inter-modulation distortion. Producing saturation in the digital domain must be done carefully, because it produces high frequencies that can cause a type of artifact known as [aliasing](https://en.wikipedia.org/wiki/Aliasing).
 
 Distortion can be achieved through **waveshaping** algorithms, a mathematical function which produces an output sample $y$ given an input sample $x$. **Gimmel**'s saturation is implemented using $\tanh$, a function that roughly simulates the 'soft-clipping' of analog circuits. 
@@ -115,7 +131,9 @@ The added variable $g$ represents a *feedback gain* and $y[n-D]$ represents an o
 **Reverb** effects mimic the physical phenomenon of acoustic reflection, where audio in a room is not only heard coming from its source but also reflected from many surfaces.
 
 Early analog reverb effects leveraged physical mediums like springs to blend current inputs with past inputs as distorted by their transduction to physical oscillation and back.
+
 <!--TODO: Image of schroeder block diagram-->
+
 A popular reverb implementation is the [Schroeder reverb](https://ccrma.stanford.edu/~jos/pasp/Schroeder_Reverberators.html), which chains [all-pass](https://en.wikipedia.org/wiki/All-pass_filter) and [comb](https://en.wikipedia.org/wiki/Comb_filter) filters in series to simulate acoustic reflection. **Gimmel**'s reverb implementation is derived from the Schroeder model.
 
 <!---TO-DO: In-depth breakdown of our Reverb--->
@@ -153,7 +171,7 @@ A problem is presented when the waveform resets from 1 to 0 or vice verse, audib
 In **Gimmel**'s implementation, two copies windowed by cosine ramps are used, but there are portions of the signal where the two gains don't add up to 1 and thereby result in a lowering of the signal's volume. To perform more seamless windowing, more windows can be used.
 
 ### Phaser
-Phasing is the product of summing a signal with a copy of itself whose phase has been manipulated. Constructive and destructive interference produce comb-like filtering that was popularized in music of the 1960s. 
+The phaser effect created by summing a signal with a copy of itself whose phase has been manipulated. Constructive and destructive interference produce time-variant comb filtering that was popularized in music of the 1960s. 
 
 Phasers are traditionally implemented with all-pass filters, which have a flat amplitude response across the frequency spectrum but distort phase. While this phase distortion is inaudible on its own, the combination of a phase-distorted signal with the original creates the aforementioned comb filtering. An oscillator modulates the frequencies being filtered out, resulting in a time-variant system. 
 
