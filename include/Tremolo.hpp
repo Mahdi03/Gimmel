@@ -12,7 +12,7 @@ namespace giml {
     class Tremolo : public Effect<T> {
     private:
         int sampleRate;
-        float speed = 1000.f, depth = 1.f; // if speed set at audio rate, ring modulation 
+        float speed = 1000.f, depth = 1.f;
         giml::SinOsc<T> osc;
 
     public:
@@ -50,15 +50,9 @@ namespace giml {
          * @param d modulation depth (clamped to [0,1])
          */
         void setDepth(float d) { // set depth
-            if (d < 0.f) {
-                this->depth = 0.f;
-            }
-            else if (d > 1) {
-                this->depth = 1.f;
-            }
-            else {
-                this->depth = d;
-            }
+            if ( d < 0.f ) { this->depth = 0.f; }
+            else if ( d > 1 ) { this->depth = 1.f; }
+            else { this->depth = d; }
         }
     };
 }

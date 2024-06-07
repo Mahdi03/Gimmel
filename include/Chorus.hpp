@@ -18,9 +18,9 @@ namespace giml {
 
     public:
         Chorus() = delete;
-        Chorus (int samprate) : sampleRate(samprate), osc(samprate) {
+        Chorus (int samprate, float maxDepthMillis = 150.f) : sampleRate(samprate), osc(samprate) {
             this->osc.setFrequency(this->rate);
-            this->buffer.allocate(100000); // max delay is 100,000 samples
+            this->buffer.allocate(giml::millisToSamples(maxDepthMillis * 2.f, samprate)); // max delay is 100,000 samples
         }
 
         /**
@@ -29,7 +29,6 @@ namespace giml {
          * @param in current sample
          * @return `in` blended with past input. Changes in temporal distance 
          * from current sample create pitch-shifting via the doppler effect 
-         * TODO: encapsulate sample interpolation logic in utility.hpp
          */
         T processSample(T in) {
             this->buffer.writeSample(in); // write sample to delay buffer
@@ -40,11 +39,6 @@ namespace giml {
 
             float idealReadIndex = millisToSamples(this->depth, this->sampleRate) + 
             (millisToSamples(this->depth, this->sampleRate) * 0.5) * this->osc.processSample();
-
-            // int readIndex = int(idealReadIndex); // calculate readIndex
-            // int readIndex2 = readIndex + 1;
-            // float frac = idealReadIndex - readIndex;
-            // float wet = (this->buffer.readSample(readIndex) * (1 - frac)) + (this->buffer.readSample(readIndex2) * frac); // get sample
 
             T wet = this->buffer.readSample(idealReadIndex);
             return wet * blend + in * (1-blend); // return mix
@@ -60,9 +54,12 @@ namespace giml {
 
         /**
          * @brief Set modulation depth- the average delay time
-         * @param freq frequency in Hz 
+         * @param d depth in milliseconds
          */
         void setDepth(float d) {
+            if (giml::millisToSamples(d * 2.f, this->sampleRate) > this->buffer.size()) {
+                d = giml::samplesToMillis(this->buffer.size(), this->sampleRate) / 2.f;
+            }
             this->depth = d;
         }
 

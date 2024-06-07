@@ -24,7 +24,7 @@ namespace giml {
     /**
      * @brief Converts linear amplitude to dB,
      * a measure of perceived loudness
-     *
+     * 
      * @param ampVal input value in linear amplitude
      * @return input value in dB
      */
@@ -60,7 +60,7 @@ namespace giml {
     }
 
     /**
-     * @brief Phase Accumulator / Unipolar Saw Oscillator. 
+     * @brief Phase Accumulator / Unipolar Saw Oscillator.
      * Can be used as a control signal and/or waveshaped into other waveforms. 
      * Will cause aliasing if sonified 
      */
@@ -152,29 +152,13 @@ namespace giml {
     };
 
     /**
-     * @brief Bipolar Sine Oscillator that inherits from `giml::phasor`. 
-     * Implemented as an ideal unipolar saw wave waveshaped with `sinf`
+     * @brief Bipolar Sine Oscillator that inherits from `giml::phasor`,
+     * waveshaped with `sinf`
      */
     template <typename T>
     class SinOsc : public Phasor<T> {
     public:
         SinOsc(int sampRate) : Phasor<T>(sampRate) {}
-        // ~SinOsc() {} // idk how these should look in a derived class
-        // // Copy constructor
-        // SinOsc(const SinOsc& c) {
-        //     this->sampleRate = c.sampleRate;
-        //     this->phase = c.phase;
-        //     this->frequency = c.frequency;
-        //     this->phaseIncrement = c.phaseIncrement;
-        // }
-        // // Copy assignment constructor
-        // SinOsc& operator=(const SinOsc& c) {
-        //     this->sampleRate = c.sampleRate;
-        //     this->phase = c.phase;
-        //     this->frequency = c.frequency;
-        //     this->phaseIncrement = c.phaseIncrement;
-        //     return *this;
-        // }
         
         /**
          * @brief Increments and returns `phase` 
@@ -203,23 +187,6 @@ namespace giml {
     class TriOsc : public Phasor<T> {
     public:
         TriOsc(int sampRate) : Phasor<T>(sampRate) {}
-        // ~TriOsc() {} // idk how these should look in a derived class
-        //TODO: 
-        // // Copy constructor
-        // SinOsc(const TriOsc& c) {
-        //     this->sampleRate = c.sampleRate;
-        //     this->phase = c.phase;
-        //     this->frequency = c.frequency;
-        //     this->phaseIncrement = c.phaseIncrement;
-        // }
-        // // Copy assignment constructor
-        // TriOsc& operator=(const TriOsc& c) {
-        //     this->sampleRate = c.sampleRate;
-        //     this->phase = c.phase;
-        //     this->frequency = c.frequency;
-        //     this->phaseIncrement = c.phaseIncrement;
-        //     return *this;
-        // }
 
         /**
          * @brief Increments and returns `phase` 
@@ -239,7 +206,6 @@ namespace giml {
             }
         }
     };
-
 
     /**
      * @brief Circular buffer implementation, handy for effects that require a delay line
@@ -348,6 +314,10 @@ namespace giml {
 
         T readSample(double delayInSamples) const {
             return this->readSample((float)delayInSamples);
+        }
+
+        size_t size() const {
+            return this->bufferSize;
         }
     };
 
