@@ -43,7 +43,7 @@ namespace giml {
      * @param sampleRate sample rate of your project
      * @return msVal translated to samples
      */
-    int millisToSamples(float msVal, int sampRate) {
+    float millisToSamples(float msVal, int sampRate) {
         return msVal * sampRate / 1000.f;
     }
 
