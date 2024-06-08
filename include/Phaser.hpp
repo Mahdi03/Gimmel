@@ -15,10 +15,10 @@ namespace giml {
     private:
         int sampleRate;
         float rate = 1.f;
-        giml::TriOsc osc;
+        giml::TriOsc<T> osc;
 
         static const int N = 6;
-        giml::Biquad<float> filterbank[N];
+        giml::Biquad<T> filterbank[N];
 
     public:
         Phaser() = delete;
