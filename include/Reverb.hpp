@@ -7,25 +7,23 @@
 namespace giml {
 
     /**
-     * @brief 
+     * @brief Reverb Effect
      * 
-     * @tparam T 
+     * Uses Schroeder implementation of reverb (but 20 combs + 4 nested APFs)
+     * 
+     * @tparam T floating-point (float or double or long double)
      * 
      * 
-     * setRoom depends on setTime, so make sure to call setTime first or else parameters will not update correctly
      */
     template <typename T>
     class Reverb : public Effect<T> {
-        //Schroeder implementation of reverb (4 comb + 2 APF)?
     private:
-        //The three user-defined parameters
+        //The user-defined parameters
         float param__time = 0.f; //Controls D for delay lines (in ms)
-        
         float param__regen = 0.f; //controls LPF feedback gains for Comb Filter
         float param__damping = 0.f; //controls feedback loop gains for APF
         float param__length = 1.f; // controls volume of room and decay time of signal
 
-        CircularBuffer<T> delayLineInput; //Store all input history
         int sampleRate;
 
         //Class forward declarations (definitions down below)
@@ -36,13 +34,11 @@ namespace giml {
         class CombFilter;
 
         //Parallel comb filters array
-        int numCombFilters = 20;
+        int numCombFilters;
         DynamicArray<CombFilter<T>> parallelCombFilters;
 
-        //CircularBuffer<T> delayLineSummedCombFilterOutput, delayLineEnteringCombFilters;
-
         //Series APF arrays (one for before the comb filters and one for after)
-        int numBeforeAPFs = 2, numAfterAPFs = 2;
+        int numBeforeAPFs, numAfterAPFs;
         DynamicArray<NestedAPF<T>*> beforeAPFs, afterAPFs;
         NestedAPF<T>* createNestedAPF(int sampleRate, int nestingDepth = 0) { //Uses `new`, must be properly deallocated in the Destructor
             NestedAPF<T>* pCurrentAPF = nullptr;
@@ -54,25 +50,12 @@ namespace giml {
         }
     
     public:
-        //Constructor
+        //Constructor - creates all APFs/Comb Filters and puts them in place
         Reverb() = delete;
-        Reverb(int sampleRate) : sampleRate(sampleRate) {
-            //this->delayLineInput.allocate(sampleRate * 5); //Support a maximum of 5 seconds of reverb
-            //this->delayLineSummedCombFilterOutput.allocate(sampleRate * 5);
-
-            //const CircularBuffer<T>* pCommonDelayLineIn;
-
-
-            if (numBeforeAPFs > 0) {
-                //this->delayLineEnteringCombFilters.allocate(sampleRate * 5);
-                for (int i = 0; i < numBeforeAPFs; i++) {
-                    this->beforeAPFs.pushBack(this->createNestedAPF(sampleRate, 2)); //Let's try nesting depth of 1 first
-                    //this->beforeAPFs.pushBack(NestedAPF<T>(sampleRate, this->beforeAPFs[i - 1].pDelayLineOut));
-                }
-                //pCommonDelayLineIn = &this->delayLineEnteringCombFilters; //support last before APF's output
-            }
-            else {
-                //pCommonDelayLineIn = &this->delayLineInput; 
+        Reverb(int sampleRate, int numBeforeAPFs = 2, int numCombFilters = 20, int numAfterAPFs = 2, int APFNestingDepth = 2) : sampleRate(sampleRate),
+        numBeforeAPFs(numBeforeAPFs), numCombFilters(numCombFilters), numAfterAPFs(numAfterAPFs) {
+            for (int i = 0; i < numBeforeAPFs; i++) {
+                this->beforeAPFs.pushBack(this->createNestedAPF(sampleRate, APFNestingDepth)); //Let's try nesting depth of 1 first
             }
             
             for (int i = 0; i < numCombFilters; i++) {
@@ -81,22 +64,19 @@ namespace giml {
                 //Comb filters are altered in phase when feedback gains are set in `.setRoom()`
             }
 
-            if (this->numAfterAPFs > 0) {
-                //this->afterAPFs.pushBack(APF<T>(sampleRate, &delayLineSummedCombFilterOutput));
-                for (int i = 0; i < numAfterAPFs; i++) {
-                    this->afterAPFs.pushBack(this->createNestedAPF(sampleRate, 2));
-                }
+            for (int i = 0; i < numAfterAPFs; i++) {
+                this->afterAPFs.pushBack(this->createNestedAPF(sampleRate, 2));
             }
             
-
         }
         //Copy constructor
         Reverb(const Reverb<T>& r) {
             this->sampleRate = r.sampleRate;
-            //this->delayLineInput = r.delayLineInput; //Deep copies the circular buffer already
 
             this->param__time = r.param__time;
-            //TODO: copy over all other params
+            this->param__regen = r.param__regen;
+            this->param__length = r.param__length;
+            this->param__damping = r.param__damping;
 
             this->numCombFilters = r.numCombFilters;
             this->numBeforeAPFs = r.numBeforeAPFs;
@@ -109,10 +89,11 @@ namespace giml {
         }
         Reverb<T>& operator=(const Reverb<T>& r) {
             this->sampleRate = r.sampleRate;
-            //this->delayLineInput = r.delayLineInput; //Deep copies the circular buffer already
             
             this->param__time = r.param__time;
-            //TODO: copy over all other params
+            this->param__regen = r.param__regen;
+            this->param__length = r.param__length;
+            this->param__damping = r.param__damping;
 
             this->numCombFilters = r.numCombFilters;
             this->numBeforeAPFs = r.numBeforeAPFs;
@@ -124,7 +105,7 @@ namespace giml {
 
             return *this;
         }
-
+        //Destructor
         ~Reverb() {
             //APFs are allocated on heap to persist through calls
             for (const auto& p : this->beforeAPFs) {
@@ -135,18 +116,62 @@ namespace giml {
             }
         }
         
+        /**
+         * @brief Use this enum type to specify what type of default room you want your reverb sounding like
+         * 
+         */
         enum class RoomType {
             CUBE, SPHERE, //TODO: Add more/better later
-            SQUARE_PYRAMID, CYLINDER
+            SQUARE_PYRAMID, CYLINDER,
+            CUSTOM
         };
 
-        void setParams(float time, float regen, float damping, float roomLength, RoomType roomType = RoomType::SPHERE, float absorptionCoefficient = 0.75f) {
+        /**
+         * @brief Abstract class to override and provide your own volume and surface area methods:
+         * - `getVolume()` return a fixed volume of the same type that `Reverb` is using
+         * - `getSurfaceArea()` return a fixed surface area of the same type that `Reverb` is using
+         * 
+         */
+        class CustomRoom {
+        public:
+            virtual T getVolume() = 0;
+            virtual T getSurfaceArea() = 0;
+        };
+
+
+        /**
+         * @brief Set the reverb parameters
+         * 
+         * This is the only way to set the reverb parameters, if you want to just change one you still need to call this function
+         * 
+         * @param time Time in seconds between successive comb filters (usually keep extremely low and modified rarely)
+         * @param regen [0, 1) feedback gain of comb filters to add depth to your sound
+         * @param damping [0, 1) feedback gain in LPFs of nested APFs to dampen the high frequencies bouncing back
+         * @param roomLength Length parameter in feet of room (affects space according to room shape chosen)
+         * @param roomType Preset shape of room for volume/surface area calculations
+         * @param absorptionCoefficient [0, 1] How much the walls of the room absorb sound (0 for complete reflection, 1 for complete absorption)
+         * 
+         * @see giml::Reverb::setRoom()
+         */
+        void setParams(float time, float regen, float damping, float roomLength = 1.f, float absorptionCoefficient = 0.75f, RoomType roomType = RoomType::SPHERE) {
             this->setTime(time);
             this->setRegen(regen);
-            this->setRoom(roomLength, roomType, absorptionCoefficient);
+            this->setRoom(roomLength, absorptionCoefficient, roomType);
             this->setDamping(damping);
         }
 
+        void setParams(float time, float regen, float damping, CustomRoom* customRoom = nullptr) {
+            this->setTime(time);
+            this->setRegen(regen);
+            this->setRoom(customRoom);
+            this->setDamping(damping);
+        }
+        /**
+         * @brief Function to process one sound sample through the `Reverb` effect at a time
+         * 
+         * @param in floating-point type input
+         * @return T floating-point (float or double) output
+         */
         T processSample(T in) {
             //this->delayLineInput.writeSample(in);
             if (!(this->enabled)) {
@@ -175,28 +200,33 @@ namespace giml {
             //return prev;
         }
 
-        void setAPFFeedback(float g) {
-            //Make sure it's negative so that it alternates
-            for (auto& apf : this->beforeAPFs) {
-                apf->setAPFFeedbackGain(-g);
-            }
-            for (auto& apf : this->afterAPFs) {
-                apf->setAPFFeedbackGain(-g);
-            }
-        }
+        // void setAPFFeedback(float g) {
+        //     //Make sure it's negative so that it alternates
+        //     for (auto& apf : this->beforeAPFs) {
+        //         apf->setAPFFeedbackGain(-g);
+        //     }
+        //     for (auto& apf : this->afterAPFs) {
+        //         apf->setAPFFeedbackGain(-g);
+        //     }
+        // }
 
-        void setAPFDelay(float ms) {
-            float delay = millisToSamples(ms, this->sampleRate);
-            for (auto& apf : this->beforeAPFs) {
-                apf->setDelaySamples(delay);
-            }
-            for (auto& apf : this->afterAPFs) {
-                apf->setDelaySamples(delay);
-            }
-        }
+        // void setAPFDelay(float ms) {
+        //     float delay = millisToSamples(ms, this->sampleRate);
+        //     for (auto& apf : this->beforeAPFs) {
+        //         apf->setDelaySamples(delay);
+        //     }
+        //     for (auto& apf : this->afterAPFs) {
+        //         apf->setDelaySamples(delay);
+        //     }
+        // }
+
     private:
-        
-        void setTime(float t) { //in ms
+        /**
+         * @brief Takes the `time` value and calculates the delay indices for all the comb filters and the APFs
+         * 
+         * @param t time in seconds (you'll want to pass in milliseconds instead to avoid accidental delay effects)
+         */
+        inline void setTime(float t) { //in sec
             this->param__time = t;
             // Recalculate/set the delay indices
 
@@ -271,8 +301,12 @@ namespace giml {
                 ::free(delayIndices);
             }
         }
-
-        void setDamping(float g) { // [0, 1)
+        /**
+         * @brief Takes a feedback gain coefficient and sets the cutoff frequency of the low-pass filters present in the APFs
+         * 
+         * @param g [0, 1) (non-inclusive because we need gain to be decaying for BIBO stability)
+         */
+        inline void setDamping(float g) { // [0, 1)
             if (g < 0) {
                 g = 0;
             }
@@ -288,10 +322,12 @@ namespace giml {
                 apf->setLPFFeedbackGain(g);
             }
         }
-
-        
-
-        void setRegen(float regen) { // [0, 1) (non-inclusive because we need gain to be decaying for BIBO stability)
+        /**
+         * @brief Takes a feedback gain coefficient and sets the parameter for all the comb filters
+         * 
+         * @param regen [0, 1) (non-inclusive because we need gain to be decaying for BIBO stability)
+         */
+        inline void setRegen(float regen) { // [0, 1) (non-inclusive because we need gain to be decaying for BIBO stability)
             if (regen < 0) {
                 regen = 0;
             }
@@ -308,7 +344,7 @@ namespace giml {
              */
 
              //0 - 1  maps to 0 - sampleRate
-            float cutoffFreq = (1 - regen) * this->sampleRate;
+            //float cutoffFreq = (1 - regen) * this->sampleRate;
 
             //Set the LPF feedback gains
             for (int i = 0; i < this->numCombFilters; i++) {
@@ -318,8 +354,15 @@ namespace giml {
             }
         }
 
-        
-        void setRoom(float length, RoomType type = RoomType::SPHERE, float absorptionCoefficient = 0.75f) {
+        /**
+         * @brief Takes the aspects of the room and calculates the Comb and APF feedback gains for a proper decay time for the reverb
+         * 
+         * @param length A either the side or radius of whatever shape you have chosen
+         * @param absorptionCoefficient The average absorption of all the collective surfaces in this fake room (0 is completely reflective and 1 is completely absorbive)
+         * @param type Pick from any of the default room types
+         * @param customRoom If you set CUSTOM in the previous field, you must specify a pointer to your custom room object so that we can properly calculate the proper feedback coefficients
+         */
+        inline void setRoom(float length, float absorptionCoefficient = 0.75f, RoomType type = RoomType::SPHERE) {
             //Length in feet (ft)
             if (length < 0) {
                 length = 0;
@@ -372,8 +415,20 @@ namespace giml {
             }
             }
 
+            this->calculateAndSetFeedbackCoefficients(RT60);
+        }
+        /**
+         * @brief Call this function if they specify a custom room object instead
+         * 
+         * @param customRoom You must specify a pointer to your custom room object so that we can properly calculate the proper feedback coefficients
+         */
+        inline void setRoom(CustomRoom* customRoom = nullptr) {
+            float RT60 = customRoom->getVolume() / (2 * customRoom->getSurfaceArea() * customRoom->getAbsorptionCoefficient());
+            this->calculateAndSetFeedbackCoefficients(RT60);
+        }
+
+        inline void calculateAndSetFeedbackCoefficients(float RT60) {
             /**
-             * @brief
              *
              * Calculating the comb filter feedback gain follows the equation:
              * g = 10^{\frac{3D}{RT60 * sampleFreq}}
@@ -398,7 +453,7 @@ namespace giml {
 
             }
 
-            //TODO: Do what we need to do for APF
+            //Do what we need to do for APF
             for (int i = 0; i < this->numBeforeAPFs; i++) {
                 float delayIndex = this->beforeAPFs[i]->getDelaySamples();
                 float feedbackGain = ::powf(10, -3 * delayIndex / (this->sampleRate * RT60))/2;
@@ -411,58 +466,17 @@ namespace giml {
             }
         }
 
-
+        /**
+         * @brief An N-th order All-Pass Filter (APF) with functionality to include another N-th order APF in its feedback loop (and continues recursively)
+         * 
+         * @tparam U 
+         */
         template <typename U>
-        class NestedAPF {
+        class NestedAPF { //not the same as 2nd order APF present in Biquad since this is Nth-order
         private:
-
-            /*template <typename V>
-            class BasicAPF { //not the same as 2nd order APF present in Biquad since this is Nth-order
-            public:
-                
-                //Constructor
-                BasicAPF() = delete;
-                BasicAPF(int sampleRate) : sampleRate(sampleRate) {
-                    this->delayLineOut.allocate(sampleRate * 5);
-                }
-                //Copy constructor
-                BasicAPF(const BasicAPF<V>& a) {
-                    this->sampleRate = a.sampleRate;
-                    this->pDelayLineIn = a.pDelayLineIn; //Use the same delay line in
-                    this->delayLineOut = a.delayLineOut;
-                    this->pDelayLineOut = &this->delayLineOut; //Publicize out pointer for Reverb to chain components together
-                    this->feedbackGain = a.feedbackGain;
-                }
-                //Copy assignment constructor
-                BasicAPF<V>& operator=(const BasicAPF<V>& a) {
-                    this->sampleRate = a.sampleRate;
-                    this->pDelayLineIn = a.pDelayLineIn; //Use the same delay line in
-                    this->delayLineOut = a.delayLineOut;
-                    this->pDelayLineOut = &this->delayLineOut; //Publicize out pointer for Reverb to chain components together
-                    this->feedbackGain = a.feedbackGain;
-
-                    return *this;
-                }
-
-                V processSample(V in) {
-
-                    return in;
-                }
-                void setFeedbackGain(float g) {
-                    this->feedbackGain = g;
-                }
-            private:
-                const CircularBuffer<V>* pDelayLineIn; //Make const pointer so that it's read-only
-                CircularBuffer<V> delayLineOut;
-                int sampleRate;
-                float feedbackGain = 0.7f;
-            };*/
-
             CircularBuffer<U> delayLine;
-            TriOsc<U> LFO;
-            NestedAPF<U>* nestedAPF;
-
-            /* Have NestedAPF expose out delay line so that the next stage can take from there */
+            TriOsc<U> LFO; //TODO: We can try another oscillator?
+            NestedAPF<U>* nestedAPF; //Pointer to another nestedAPF inside this one's feedback loop
         public:
             //Constructor
             NestedAPF() = delete;
@@ -471,7 +485,6 @@ namespace giml {
                 this->delayLine.allocate(5 * sampleRate);
                 //TODO: this->LFO.setFrequency();
             }
-            //const CircularBuffer<U>* pDelayLineOut; //Make const pointer so that it's read-only
             //Copy Constructor
             NestedAPF(const NestedAPF<U>& a) {
                 this->delayLine = a.delayLine;
@@ -501,9 +514,13 @@ namespace giml {
             }
 
             ~NestedAPF() {
-                delete this->nestedAPF;
+                delete this->nestedAPF; //Make sure to deallocate this so that 
             }
-
+            /**
+             * @brief Sets the number of samples the delay starts at. It sets all nested APFs to have 1/4 that delay
+             * 
+             * @param numSamples  (can be a float for interpolated samples)
+             */
             void setDelaySamples(float numSamples) {
                 this->delaySamples = numSamples;
                 this->nestedAPF->delaySamples = numSamples/4;
@@ -512,19 +529,26 @@ namespace giml {
             float getDelaySamples() const {
                 return this->delaySamples;
             }
-
+            /**
+             * @brief Sets the LPF Feedback gain for the embedded LPF(s) in this NestedAPF. Sets all nested ones to 1/4 (recursive)
+             * 
+             * @param g 
+             */
             void setLPFFeedbackGain(float g) {
                 this->LPFFeedbackGain = g;
-                this->nestedAPF->LPFFeedbackGain = g;
+                this->nestedAPF->LPFFeedbackGain = g/4;
             }
-
+            /**
+             * @brief Sets the actual APF's Feedback gain. Sets all nested ones to 1/4 (recursive)
+             * 
+             * @param g 
+             */
             void setAPFFeedbackGain(float g) {
                 this->APFFeedbackGain = g;
                 this->nestedAPF->APFFeedbackGain = g/4;
             }
 
             U processSample(U in) {
-                //TODO:
 
                 // Read previous sample from delay line (modulated by oscillator converted to unipolar through *0.5 + 0.5)
                 U delayedVal = this->delayLine.readSample(this->delaySamples + (this->LFO.processSample() + 1) / 2 * this->lfoDepth);
@@ -620,16 +644,12 @@ namespace giml {
                 return this->LPFFeedbackGain;
             }
 
-            void setLPFCutoffFrequency(float freq) {
-                this->LPF.setParams(freq);
-            }
-
-            
+            // void setLPFCutoffFrequency(float freq) {
+            //     this->LPF.setParams(freq);
+            // }
 
             U processSample(U in) {
-                // x[n-D] - g2 x[n-D-1] + g2 y[n-1] + g1 y[n-D]  (g2 = LPF gain)
-                // x[n-D] + g2 (y[n-1] - x[n-(D+1)]) + g1 y[n-D]
-                
+                //Copied from block diagram
 
                 float yn = this->delayLineY.readSample(delayIndex);
                  if (this->neg) {
@@ -643,6 +663,8 @@ namespace giml {
                 return yn;
 
 
+                // x[n-D] - g2 x[n-D-1] + g2 y[n-1] + g1 y[n-D]  (g2 = LPF gain)
+                // x[n-D] + g2 (y[n-1] - x[n-(D+1)]) + g1 y[n-D]
 
                 //U returnVal = this->pDelayLineX->readSample(delayIndex) // x[n-D]
                 //    + LPFFeedbackGain * (this->delayLineY.readSample(1) - this->pDelayLineX->readSample(delayIndex+1)) // g2 (y[n-1] - x[n-(D+1)])
@@ -655,8 +677,6 @@ namespace giml {
             }
 
         };
-
-
 
     };
 }

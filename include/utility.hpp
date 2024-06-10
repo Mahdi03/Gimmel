@@ -282,18 +282,18 @@ namespace giml {
          * @param delayInSamples access a sample this many samples ago
          * @return `buffer[writeIndex - delayInSamples]`
          */
-        T readSample(size_t delayInSamples) const {
+        inline T readSample(size_t delayInSamples) const {
             if (delayInSamples >= this->bufferSize) { // limit delay to maxIndex
                 delayInSamples = this->bufferSize - 1;
             }
-            int readIndex = this->writeIndex - delayInSamples; // calculate readIndex
+            long long int readIndex = this->writeIndex - delayInSamples; // calculate readIndex
             if (readIndex < 0) {
                 readIndex += this->bufferSize; // circular logic
             }
             return this->pBackingArr[readIndex];
         }
 
-        T readSample(int delayInSamples) const {
+        inline T readSample(int delayInSamples) const {
             return this->readSample((size_t)(delayInSamples));
         }
 
@@ -302,7 +302,7 @@ namespace giml {
          * @param delayInSamples access a sample this many fractional samples ago
          * @return `interpolated sample from delayInSamples ago`
          */
-        T readSample(float delayInSamples) const {
+        inline T readSample(float delayInSamples) const {
             size_t readIndex = delayInSamples; // sample 1
             size_t readIndex2 = readIndex + 1; // sample 2
             float frac = delayInSamples - readIndex; // proportion of sample 2 to blend in
@@ -312,7 +312,7 @@ namespace giml {
                 + (this->readSample(readIndex2) * frac); 
         }
 
-        T readSample(double delayInSamples) const {
+        inline T readSample(double delayInSamples) const {
             return this->readSample((float)delayInSamples);
         }
 
