@@ -1,8 +1,8 @@
 #ifndef GIML_PHASER_HPP
 #define GIML_PHASER_HPP
 #include <math.h>
-#include "Utility.hpp"
-#include "Biquad.hpp"
+#include "utility.hpp"
+#include "biquad.hpp"
 
 namespace giml {
     /**
