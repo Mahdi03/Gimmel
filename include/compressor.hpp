@@ -2,7 +2,7 @@
 #define GIML_COMPRESSOR_HPP
 
 #include <math.h>
-#include "Utility.hpp"
+#include "utility.hpp"
 namespace giml {
     /**
      * @brief This class implements the ideal compressor described in Reiss et al. 2011

@@ -1,7 +1,7 @@
 #ifndef GIML_DETUNE_HPP
 #define GIML_DETUNE_HPP
 #include <math.h>
-#include "Utility.hpp"
+#include "utility.hpp"
 namespace giml {
     /**
      * @brief This class implements a time-domain pitchshifter 
