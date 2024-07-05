@@ -2,6 +2,7 @@
 #define GIML_TREMOLO_HPP
 #include <math.h>
 #include "utility.hpp"
+#include "oscillator.hpp"
 namespace giml {
     /**
      * @brief This class implements a basic tremolo effect 

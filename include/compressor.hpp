@@ -1,6 +1,5 @@
 #ifndef GIML_COMPRESSOR_HPP
 #define GIML_COMPRESSOR_HPP
-
 #include <math.h>
 #include "utility.hpp"
 namespace giml {

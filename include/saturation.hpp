@@ -1,10 +1,8 @@
 #ifndef GIML_SATURATION_HPP
 #define GIML_SATURATION_HPP
-
 #include <math.h>
 #include "utility.hpp"
 #include "biquad.hpp"
-
 namespace giml {
     template <typename T>
     class Saturation : public Effect<T> {
