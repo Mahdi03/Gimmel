@@ -95,10 +95,10 @@ namespace giml {
     };
 
     template <typename T>
-    class timer {
+    class Timer {
     protected:
         int n = 0;
-        int N = 0;
+        int N = 1;
         bool done = false;
 
     public:  
