@@ -21,6 +21,7 @@ namespace giml {
         Delay() = delete;
         Delay(int samprate, T maxDelayMillis = 3000) : sampleRate(samprate) {
             this->buffer.allocate(giml::millisToSamples(maxDelayMillis, samprate)); // max delayTime = maxDelay
+            this->loPass.setG(0.5);
         }
         
         /**
