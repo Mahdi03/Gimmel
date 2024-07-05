@@ -4,7 +4,7 @@
 #include "utility.hpp"
 namespace giml {
     /**
-     * @brief This class implements a basic delay with feedback effect
+     * @brief This class implements a basic delay with feedback effect. 
      * @tparam T floating-point type for input and output sample data such as `float`, `double`, or `long double`,
      * up to user what precision they are looking for (float is more performant)
      */
@@ -12,12 +12,12 @@ namespace giml {
     class Delay : public Effect<T> {
     private:
         int sampleRate;
-        float feedback = 0.f, delayTime = 0.f;
+        T feedback = 0, delayTime = 0, blend = 0.5;
         giml::CircularBuffer<float> buffer;
 
     public:
         Delay() = delete;
-        Delay(int samprate, float maxDelayMillis = 3000.f) : sampleRate(samprate) {
+        Delay(int samprate, T maxDelayMillis = 3000) : sampleRate(samprate) {
             this->buffer.allocate(giml::millisToSamples(maxDelayMillis, samprate)); // max delayTime = maxDelay
         }
         
@@ -31,19 +31,29 @@ namespace giml {
                 return in;
             }
 
-            int readIndex = ::round(millisToSamples(this->delayTime, this->sampleRate));
-            float output = this->buffer.readSample(readIndex); 
-            this->buffer.writeSample(in + this->feedback * output); // write sample to delay buffer
+            T readIndex = millisToSamples(this->delayTime, this->sampleRate);
+            T y_0 = in + this->buffer.readSample(readIndex) * this->feedback;
+            this->buffer.writeSample(y_0); // write sample to delay buffer
 
-          return output;
+          return giml::linMix<float>(in, y_0, this->blend);
         }
 
         /**
         * @brief Set feedback gain.  
         * @param fbGain gain in linear amplitude. Be careful setting above 1!
         */
-        void setFeedback(float fbGain) {
+        void setFeedback(T fbGain) {
             this->feedback = fbGain;
+        }
+
+        /**
+        * @brief Set feedback gain based on a t60 time value  
+        * @param timeMillis desired decay time in milliseconds
+        */
+        void setFeedback_t60(T timeMillis) {
+            T normalizedDecay = millisToSamples(timeMillis, this->sampleRate) / 
+            millisToSamples(this->delayTime, this->sampleRate);
+            this->feedback = giml::t60<T>(static_cast<int>(::round(normalizedDecay)));
         }
 
         /**
@@ -51,11 +61,21 @@ namespace giml {
         * @param sizeMillis delay time in milliseconds. 
         * Clamped to `samplesToMillis(bufferSize)`
         */
-        void setDelayTime(float sizeMillis) { // confirm with Mahdi
+        void setDelayTime(T sizeMillis) { 
             if (sizeMillis > samplesToMillis(buffer.size(), this->sampleRate)) {
                 sizeMillis = samplesToMillis(buffer.size(), this->sampleRate);
             }
             this->delayTime = sizeMillis;
+        }
+
+        /**
+        * @brief Set blend (linear)
+        * @param gVal percentage of wet to blend in. Clamped to [0,1]
+        */
+        void setBlend(T gVal) { 
+            if (gVal < 0) {gVal = 0;}
+            if (gVal > 1) {gVal = 1;}
+            this->blend = gVal;
         }
     };
 }
