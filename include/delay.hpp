@@ -2,6 +2,7 @@
 #define GIML_DELAY_HPP
 #include <math.h>
 #include "utility.hpp"
+#include "filter.hpp"
 namespace giml {
     /**
      * @brief This class implements a basic delay with feedback effect. 
@@ -13,7 +14,8 @@ namespace giml {
     private:
         int sampleRate;
         T feedback = 0, delayTime = 0, blend = 0.5;
-        giml::CircularBuffer<float> buffer;
+        giml::onePole<T> loPass;
+        giml::CircularBuffer<T> buffer;
 
     public:
         Delay() = delete;
@@ -32,7 +34,7 @@ namespace giml {
             }
 
             T readIndex = millisToSamples(this->delayTime, this->sampleRate);
-            T y_0 = in + this->buffer.readSample(readIndex) * this->feedback;
+            T y_0 = loPass.lpf(in + this->buffer.readSample(readIndex) * this->feedback);
             this->buffer.writeSample(y_0); // write sample to delay buffer
 
           return giml::linMix<float>(in, y_0, this->blend);
