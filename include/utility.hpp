@@ -94,6 +94,37 @@ namespace giml {
         bool enabled = false;
     };
 
+    template <typename T>
+    class timer {
+    protected:
+        int n = 0;
+        int N = 0;
+        bool done = false;
+
+    public:  
+        void set(int bigN) {
+            this->n = 0;
+            this->N = bigN;
+            this->done = false;
+        }
+
+        void tick() {
+            if (done) {return;}
+            n++;
+            if (n == N) {this->done = true;}
+        }
+
+        bool isDone() {return done;}
+
+        int timeS() {return n;}
+
+        T timeU() {
+            if (N == 0) {return static_cast<T>(0);} // Avoid division by zero
+            if (done) {return 1;}
+            return static_cast<T>(n) / static_cast<T>(N);
+        }
+    };
+
     /**
      * @brief Circular buffer implementation, handy for effects that require a delay line
      */
