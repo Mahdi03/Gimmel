@@ -71,6 +71,43 @@ namespace giml {
     }
 
     /**
+     * @brief calculates the number of samples a given decay multiplier 
+     * will need to decay by -60dB
+     *
+     * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022
+     * Chapter 6 pg. 168
+     *
+     * @param gVal decay multiplier
+     * @return num samples needed to reach -60dB
+     */
+    template <typename T>
+    T t60time(T gVal) {
+        T impulse = 1;
+        T counter = 0;
+        while (impulse > 2e-10) {
+            impulse *= gVal;
+            counter++;
+        }
+      return counter;
+    }
+
+    /**
+     * @brief calculates a decay multiplier to reach -60dB 
+     * over `numSamps` samples
+     *
+     * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022
+     * Chapter 6 pg. 168
+     *
+     * @param numSamps decay time in samples
+     * @return decay multiplier
+     */
+    template <typename T>
+    T t60(int numSamps) {
+        T gVal = ::pow(2e-10, 1.f/numSamps);
+      return gVal;
+    }
+
+    /**
      * @brief Effect class that implements a bypass switch (enabled by default)
      */
     template <typename T>
