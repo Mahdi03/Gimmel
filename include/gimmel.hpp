@@ -3,6 +3,7 @@
 #include "compressor.hpp"
 #include "delay.hpp"
 #include "detune.hpp"
+#include "filter.hpp"
 #include "phaser.hpp"
 #include "reverb.hpp"
 #include "saturation.hpp"
