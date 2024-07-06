@@ -37,7 +37,7 @@ namespace giml {
             
             T readIndex = millisToSamples(this->delayTime, this->sampleRate); // calculate read index
             T y_0 = loPass.lpf(this->buffer.readSample(readIndex)); // read from buffer and loPass
-            this->buffer.writeSample(this->dcBlock.hpf(in + y_0 * this->feedback)); // write sample to delay buffer
+            this->buffer.writeSample(this->dcBlock.hpf(in + giml::limit<T>(y_0 * this->feedback, 0.75))); // write sample to delay buffer
 
           return giml::linMix<float>(in, y_0, this->blend); // return wet/dry mix
         }

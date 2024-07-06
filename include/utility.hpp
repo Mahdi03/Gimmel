@@ -73,10 +73,36 @@ namespace giml {
      * @return clipped input
      */
     template <typename T>
-    T clip(T in, T min, T max = 0) {
+    T clip(T in, T min, T max) {
         if (in < min) {return min;}
         else if (in > max) {return max;}
         else {return in;}
+    }
+
+    /**
+     * @brief bipolar sigmoid function that compresses input to the range `(-1,1)`.
+     * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022 Chapter 3 pg. 84
+     * @param in input
+     * @return `x / sqrt(x^2 + 1)`
+     */
+    template <typename T>
+    T biSigmoid(T in) {
+        return in / ::sqrt(in*in + 1);
+    }
+
+    /**
+     * @brief Limiting function that uses `giml::biSigmoid` to 
+     * limit inputs that exceed a stipulated threshold.
+     * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022 Chapter 7 pg. 205
+     * @param in input
+     * @param thresh threshold 
+     * @return limited `in`
+     */
+    template <typename T>
+    T limit(T in, T thresh) {
+        T lin = giml::clip(in, -thresh, thresh);
+        T nonLin = giml::biSigmoid((in - lin)/(1 - thresh)) * (1 - thresh);
+        return lin + nonLin;
     }
 
     /**
