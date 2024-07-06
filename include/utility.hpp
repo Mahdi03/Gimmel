@@ -81,7 +81,7 @@ namespace giml {
 
     /**
      * @brief calculates the number of samples a given decay multiplier 
-     * will need to decay by -60dB
+     * will need to decay by -60dB.
      *
      * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022
      * Chapter 6 pg. 168
@@ -102,7 +102,7 @@ namespace giml {
 
     /**
      * @brief calculates a decay multiplier to reach -60dB 
-     * over `numSamps` samples
+     * over `numSamps` samples.
      *
      * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022
      * Chapter 6 pg. 168
@@ -172,7 +172,10 @@ namespace giml {
     };
 
     /**
-     * @brief Circular buffer implementation, handy for effects that require a delay line
+     * @brief Circular buffer implementation. 
+     * Handy for effects that require a delay line.
+     * TODO: Add allpass interpolation -JAJ
+     * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022 Chapter 7 pg. 223
      */
     template <typename T>
     class CircularBuffer {

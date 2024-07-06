@@ -1,5 +1,5 @@
-#ifndef OSCILLATOR_HPP
-#define OSCILLATOR_HPP
+#ifndef GIML_OSCILLATOR_HPP
+#define GIML_OSCILLATOR_HPP
 namespace giml {
     /**
      * @brief Phase Accumulator / Unipolar Saw Oscillator.
@@ -29,7 +29,6 @@ namespace giml {
             this->phase = c.phase;
             this->frequency = c.frequency;
             this->phaseIncrement = c.phaseIncrement;
-
             return *this;
         }
 
@@ -39,16 +38,16 @@ namespace giml {
          */
         virtual void setSampleRate(int sampRate) {
             this->sampleRate = sampRate;
-            this->phaseIncrement = this->frequency / static_cast<float>(this->sampleRate);
+            this->phaseIncrement = this->frequency / static_cast<T>(this->sampleRate);
         }
 
         /**
          * @brief Sets the oscillator's frequency
          * @param freqHz frequency in hertz (cycles per second)
          */
-        virtual void setFrequency(float freqHz) {
+        virtual void setFrequency(T freqHz) {
             this->frequency = freqHz;
-            this->phaseIncrement = ::fabs(this->frequency) / static_cast<T>(this->sampleRate);
+            this->phaseIncrement = ::abs(this->frequency) / static_cast<T>(this->sampleRate);
         }
 
         /**
@@ -57,24 +56,18 @@ namespace giml {
          */
         virtual T processSample() {
             this->phase += this->phaseIncrement; // increment phase
-            if (this->phase >= 1.f) { // if waveform zenith...
-                this->phase -= 1.f; // wrap phase
-            }
-
+            if (this->phase >= 1) {this->phase -= 1;} // if waveform zenith, wrap phase
             if (this->frequency < 0) { // if negative frequency...
                 return 1.f - this->phase; // return reverse phasor
-            }
-            else {
-                return this->phase; // return phasor
-            }
+            } else {return this->phase;} // return phasor
         }
 
         /**
          * @brief Sets `phase` manually 
-         * @param ph User-defined phase 
-         * (will be wrapped to the range [0,1] by processSample()) 
+         * @param ph User-defined phase. 
+         * Will be wrapped to the range `[0,1]` by `processSample()` 
          */
-        virtual void setPhase(float ph) { // set phase manually 
+        virtual void setPhase(T ph) { // set phase manually 
             this->phase = ph;
         }
         
@@ -83,19 +76,16 @@ namespace giml {
          * If `frequency` is negative, returns `1 - phase`
          * @return `phase` 
          */
-        virtual float getPhase() {
+        virtual T getPhase() {
             if (this->frequency < 0) { // if negative frequency...
-                return 1.f - this->phase; // return reverse phasor
-            }
-            else {
-                return this->phase; // return phasor
-            }
+                return 1 - this->phase; // return reverse phasor
+            } else {return this->phase;} // return phasor
         }
     };
 
     /**
-     * @brief Bipolar Sine Oscillator that inherits from `giml::phasor`,
-     * waveshaped with `sinf`
+     * @brief Bipolar Sine Oscillator that inherits from `giml::Phasor`,
+     * waveshaped with `std::sin`
      */
     template <typename T>
     class SinOsc : public Phasor<T> {
@@ -104,25 +94,15 @@ namespace giml {
         
         /**
          * @brief Increments and returns `phase` 
-         * @return `sinf(phase)` (after increment)
+         * @return `sin(2pi * phase)` (after increment)
          */
         T processSample() override {
-            this->phase += this->phaseIncrement; // increment phase
-            if (this->phase >= 1.f) { // if waveform zenith...
-                this->phase -= 1.f; // wrap phase
-            }
-
-            if (this->frequency < 0) { // if negative frequency...
-                return ::sinf(GIML_TWO_PI * (1.f - this->phase)); // return reverse phasor
-            } 
-            else {
-                return ::sinf(GIML_TWO_PI * this->phase); // return phasor
-            }
+            return ::sin(M_2PI * Phasor<T>::processSample());
         }
     };
 
     /**
-     * @brief Bipolar Ideal Triangle Oscillator that inherits from `giml::phasor`
+     * @brief Bipolar Ideal Triangle Oscillator that inherits from `giml::Phasor`
      * Best used as a control signal, will cause aliasing if sonified 
      */
     template <typename T>
@@ -135,17 +115,7 @@ namespace giml {
          * @return Waveshaped `phase` (after increment)
          */
         T processSample() override {
-            this->phase += this->phaseIncrement; // increment phase
-            if (this->phase >= 1.f) { // if waveform zenith...
-                this->phase -= 1.f; // wrap phase
-            }
-
-            if (this->frequency < 0) { // if negative frequency...
-                return ::fabs((1 - this->phase) * 2 - 1) * 2 - 1; // return reverse phasor
-            }
-            else {
-                return ::fabs(this->phase * 2 - 1) * 2 - 1; // return phasor
-            }
+            return ::abs(Phasor<T>::processSample() * 2 - 1) * 2 - 1;
         }
     };
 }
