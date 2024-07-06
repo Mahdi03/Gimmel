@@ -9,7 +9,6 @@ namespace giml {
     /**
      * @brief Converts dB value to linear amplitude,
      * the native format of audio samples
-     *
      * @param dBVal input value in dB
      * @return input value in amplitude
      */
@@ -20,7 +19,6 @@ namespace giml {
     /**
      * @brief Converts linear amplitude to dB,
      * a measure of perceived loudness
-     * 
      * @param ampVal input value in linear amplitude
      * @return input value in dB
      */
@@ -34,7 +32,6 @@ namespace giml {
     /**
      * @brief Converts a quantity of milliseconds to an
      * equivalent quantity of samples
-     *
      * @param msVal input value in milliseconds
      * @param sampleRate sample rate of your project
      * @return msVal translated to samples
@@ -46,7 +43,6 @@ namespace giml {
     /**
      * @brief Converts a quantity of samples to an
      * equivalent quantity of milliseconds
-     *
      * @param numSamples input value in samples
      * @param sampleRate samplerate of your project
      * @return numSamples translated to milliseconds
@@ -57,7 +53,6 @@ namespace giml {
 
     /**
      * @brief Mixes two numbers with linear interpolation
-     *
      * @param in1 input 1
      * @param in2 input 2
      * @param mix percentage of input 2 to mix in. Clamped to [0,1]
@@ -68,6 +63,20 @@ namespace giml {
         if (mix < 0) {mix = 0;}
         if (mix > 1) {mix = 1;}
         return in1 * (1-mix) + in2 * mix;
+    }
+
+    /**
+     * @brief clips an input number to keep it within specified bounds
+     * @param in input number
+     * @param min minimum bound
+     * @param max maximum bound
+     * @return clipped input
+     */
+    template <typename T>
+    T clip(T in, T min, T max = 0) {
+        if (in < min) {return min;}
+        else if (in > max) {return max;}
+        else {return in;}
     }
 
     /**
