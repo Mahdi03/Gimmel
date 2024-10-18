@@ -1,6 +1,5 @@
 #ifndef GIML_COMPRESSOR_HPP
 #define GIML_COMPRESSOR_HPP
-
 #include <math.h>
 #include "utility.hpp"
 namespace giml {
@@ -100,7 +99,7 @@ namespace giml {
         void setAttack(float attackMillis) { // calculated from Reiss et al. 2011 (Eq. 7)
             if (attackMillis <= 0.f) {
                 attackMillis = 0.000000000000000001f;
-                std::cout << "Attack time set to pseudo-zero value, supply a positive float" << std::endl;
+                printf("Attack time set to pseudo-zero value, supply a positive float/n");
             }
             float t = attackMillis * 0.001f;
             this->aAttack = ::powf( M_E , -1.f / (t * this->sampleRate) );
@@ -113,7 +112,7 @@ namespace giml {
         void setRelease(float releaseMillis) { // // 
             if (releaseMillis <= 0.f) {
                 releaseMillis = 0.000000000000000001f;
-                std::cout << "Release time set to pseudo-zero value, supply a positive float" << std::endl;
+                printf("Release time set to pseudo-zero value, supply a positive float/n");
             }
             float t = releaseMillis * 0.001f;
             this->aRelease = ::powf( M_E , -1.f / (t * this->sampleRate) );
@@ -126,7 +125,7 @@ namespace giml {
         void setRatio(float r) {
             if (r <= 1.f) { 
                 r = 1.f + 0.00001f;
-                std::cout << "Ratio must be greater than 1" << std::endl; // necessary? 
+                printf("Ratio must be greater than 1/n"); // necessary? 
             }
             this->ratio = r;
         }
@@ -146,7 +145,7 @@ namespace giml {
         void setKnee(float widthdB) {
             if (widthdB <= 0.f) {
                 widthdB = 0.00001f;
-                std::cout << "Knee set to pseudo-zero value, supply a positive float" << std::endl;
+                printf("Knee set to pseudo-zero value, supply a positive float/n");
             }
             this->knee_dB = widthdB;
         }

@@ -1,9 +1,8 @@
 #ifndef GIML_REVERB_HPP
 #define GIML_REVERB_HPP
-
 #include "utility.hpp"
+#include "oscillator.hpp"
 #include "biquad.hpp"
-
 namespace giml {
 
     /**

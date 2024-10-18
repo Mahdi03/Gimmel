@@ -1,10 +1,8 @@
 #ifndef GIML_SATURATION_HPP
 #define GIML_SATURATION_HPP
-
 #include <math.h>
 #include "utility.hpp"
 #include "biquad.hpp"
-
 namespace giml {
     template <typename T>
     class Saturation : public Effect<T> {
@@ -149,7 +147,7 @@ namespace giml {
         void setDrive (float d) {
             if (d <= 0.f) {
                 d += 1e-6;
-                std::cout << "Drive set to pseudo-zero value, supply a positive float" << std::endl;
+                printf("Drive set to pseudo-zero value, supply a positive float/n");
             }
             this->drive = dBtoA(d);
         }
