@@ -1,5 +1,6 @@
 #ifndef GIML_OSCILLATOR_HPP
 #define GIML_OSCILLATOR_HPP
+#include "utility.hpp"
 namespace giml {
     /**
      * @brief Phase Accumulator / Unipolar Saw Oscillator.

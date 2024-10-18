@@ -109,7 +109,7 @@ namespace giml {
 
             switch (useCase) {
             case BiquadUseCase::PassThroughDefault:
-                std::cout << "Make sure you set filter type first before you set parameters" << std::endl;
+                printf("Make sure you set filter type first before you set parameters/n");
                 break;
             case BiquadUseCase::LPF_1st:
                 this->setParams__LPF_1st(cutoffFrequency);
@@ -164,7 +164,7 @@ namespace giml {
             switch (useCase) {
             case BiquadUseCase::PassThroughDefault:
                 returnVal = in;
-                std::cout << "Make sure you set filter type first before you use the Biquad struct" << std::endl;
+                printf("Make sure you set filter type first before you use the Biquad struct/n");
                 break;
             case BiquadUseCase::LPF_1st:
             case BiquadUseCase::HPF_1st:
@@ -195,11 +195,11 @@ namespace giml {
             case BiquadUseCase::BSF_Butterworth:
             case BiquadUseCase::BPF:
             case BiquadUseCase::BPF_Butterworth:
-                std::cout << "Not yet implemented!!" << std::endl;
+                printf("Not yet implemented!!/n");
                 returnVal = 0;
                 break;
             default:
-                std::cout << "How did we get here!!" << std::endl;
+                printf("How did we get here!!/n");
                 returnVal = 0;
             }
 
@@ -234,7 +234,7 @@ namespace giml {
             if (this->useCase != BiquadUseCase::LPF_1st) {
                 this->useCase = BiquadUseCase::LPF_1st;
             }
-            float cutoffAngle = GIML_TWO_PI * cutoffFrequency / this->sampleRate;
+            float cutoffAngle = M_2PI * cutoffFrequency / this->sampleRate;
             float gamma = ::cosf(cutoffAngle) / (1 + ::sinf(cutoffAngle));
             this->a0 = (1 - gamma) / 2;
             this->a1 = this->a0;
@@ -248,7 +248,7 @@ namespace giml {
             if (this->useCase != BiquadUseCase::HPF_1st) {
                 this->useCase = BiquadUseCase::HPF_1st;
             }
-            float cutoffAngle = GIML_TWO_PI * cutoffFrequency / this->sampleRate;
+            float cutoffAngle = M_2PI * cutoffFrequency / this->sampleRate;
             float gamma = ::cosf(cutoffAngle) / (1 + ::sinf(cutoffAngle));
             this->a0 = (1 + gamma) / 2;
             this->a1 = -this->a0;
@@ -262,7 +262,7 @@ namespace giml {
             if (this->useCase != BiquadUseCase::LPF_2nd) {
                 this->useCase = BiquadUseCase::LPF_2nd;
             }
-            float cutoffAngle = GIML_TWO_PI * cutoffFrequency / this->sampleRate;
+            float cutoffAngle = M_2PI * cutoffFrequency / this->sampleRate;
             float d = ::sinf(cutoffAngle) / (2 * Q);
             float Beta = (1 + (1 - d) / (1 + d)) / 2;
             float gamma = Beta * ::cosf(cutoffAngle);
@@ -280,7 +280,7 @@ namespace giml {
             if (this->useCase != BiquadUseCase::HPF_2nd) {
                 this->useCase = BiquadUseCase::HPF_2nd;
             }
-            float cutoffAngle = GIML_TWO_PI * cutoffFrequency / this->sampleRate;
+            float cutoffAngle = M_2PI * cutoffFrequency / this->sampleRate;
             float d = ::sinf(cutoffAngle) / (2 * Q);
             float Beta = (1 + (1 - d) / (1 + d)) / 2;
             float gamma = Beta * ::cosf(cutoffAngle);
@@ -368,7 +368,7 @@ namespace giml {
             }
             float BW = cutoffFrequency / Q; //Bandwidth
             float C = 1 / ::tanf(M_PI * cutoffFrequency * BW / this->sampleRate);
-            float D = 2 * ::tanf(GIML_TWO_PI * cutoffFrequency / this->sampleRate);
+            float D = 2 * ::tanf(M_2PI * cutoffFrequency / this->sampleRate);
 
             this->a0 = 1 / (1 + C);
             this->a1 = 0;
@@ -385,7 +385,7 @@ namespace giml {
             }
             float BW = cutoffFrequency / Q; //Bandwidth
             float C = ::tanf(M_PI * cutoffFrequency * BW / this->sampleRate);
-            float D = 2 * ::tanf(GIML_TWO_PI * cutoffFrequency / this->sampleRate);
+            float D = 2 * ::tanf(M_2PI * cutoffFrequency / this->sampleRate);
 
             this->a0 = 1 / (1 + C);
             this->a1 = 0;
@@ -402,7 +402,7 @@ namespace giml {
         //    }
         //    float BW = cutoffFrequency / Q; //Bandwidth
         //    float C = ::tanf(M_PI * cutoffFrequency * BW / this->sampleRate);
-        //    float D = 2 * ::tanf(GIML_TWO_PI * cutoffFrequency / this->sampleRate);
+        //    float D = 2 * ::tanf(M_2PI * cutoffFrequency / this->sampleRate);
 
         //    this->a0 = 1 / (1 + C);
         //    this->a1 = 0;
@@ -433,7 +433,7 @@ namespace giml {
             if (this->useCase != BiquadUseCase::APF_2nd) {
                 this->useCase = BiquadUseCase::APF_2nd;
             }
-            float cutoffAngle = GIML_TWO_PI * cutoffFrequency / this->sampleRate;
+            float cutoffAngle = M_2PI * cutoffFrequency / this->sampleRate;
             float alpha = ::sinf(cutoffAngle) / (2 * Q);
 
             this->a0 = (1 - alpha) / (1 + alpha);
@@ -446,7 +446,7 @@ namespace giml {
             /*float BW = cutoffFrequency / Q;
             float t = ::tanf(M_PI * BW / this->sampleRate);
             float alpha = (t - 1) / (t + 1);
-            float Beta = -::cosf(GIML_TWO_PI * cutoffFrequency / this->sampleRate);
+            float Beta = -::cosf(M_2PI * cutoffFrequency / this->sampleRate);
             this->a0 = -alpha;
             this->a1 = Beta * (1 - alpha);
             this->a2 = 1;
@@ -460,7 +460,7 @@ namespace giml {
             if (this->useCase != BiquadUseCase::LSF) {
                 this->useCase = BiquadUseCase::LSF;
             }
-            float cutoffAngle = GIML_TWO_PI * cutoffFrequency / this->sampleRate;
+            float cutoffAngle = M_2PI * cutoffFrequency / this->sampleRate;
             float A = giml::dBtoA(gainDB);
 
 
@@ -499,7 +499,7 @@ namespace giml {
             if (this->useCase != BiquadUseCase::HSF) {
                 this->useCase = BiquadUseCase::HSF;
             }
-            float cutoffAngle = GIML_TWO_PI * cutoffFrequency / this->sampleRate;
+            float cutoffAngle = M_2PI * cutoffFrequency / this->sampleRate;
             float A = giml::dBtoA(gainDB);
 
             float cosss = ::cosf(cutoffAngle);
