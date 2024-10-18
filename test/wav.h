@@ -3,11 +3,12 @@
 #define WAV_H
 
 #define DR_WAV_IMPLEMENTATION
-#include "dr_wav.h"
+#include "dr_libs/dr_wav.h"
 
 #include <iostream>
 #include <stdlib.h> //For malloc
 
+/* Opens WAV files in signed 32-bit format*/
 class WAVLoader {
 public:
     WAVLoader(const char* filename) {
@@ -37,7 +38,7 @@ private:
     }
     void openWAVFile(const char* filename) {
         drwav wav;
-        if (!drwav_init_file(&wav, filename)) {
+        if (!drwav_init_file(&wav, filename, NULL)) {
             // Error opening WAV file.
             std::cout << "Could not open WAV file for reading: " << filename << std::endl;
             exit(0);
@@ -50,6 +51,7 @@ private:
         // Now we want to normalize the entire array
         normalizeArr(pDecodedInterleavedSamples, numberOfSamplesActuallyDecoded, pArr);
         free(pDecodedInterleavedSamples);
+        drwav_uninit(&wav);
     }
     void normalizeArr(int32_t* pArrIn, int size, float* pArrOut) {
         for (int i = 0; i < size; i++) {
@@ -60,10 +62,18 @@ private:
 
 class WAVWriter {
 private:
-    drwav* pWAV;
-    drwav_data_format wavFormat;
+    drwav* pWAV = nullptr;
 public:
     WAVWriter(const char* filename, int sampleRate = 48000) {
+
+        //if (!drwav_init_file(pWAV, filename, NULL)) {
+        //    // Error opening WAV file.
+        //    std::cout << "Could not open WAV file for reading: " << filename << std::endl;
+        //    exit(0);
+        //}
+
+        pWAV = (drwav*)malloc(sizeof(drwav));
+        drwav_data_format wavFormat;
 
         wavFormat.bitsPerSample = 32;
         wavFormat.channels = 1;
@@ -71,7 +81,7 @@ public:
         wavFormat.format = DR_WAVE_FORMAT_PCM;
         wavFormat.sampleRate = sampleRate;
 
-        pWAV = drwav_open_file_write(filename, &wavFormat);
+        drwav_init_file_write(pWAV, filename, &wavFormat, NULL);
         if (!pWAV) {
             //Could not open the file
             std::cout << "Could not open WAV file for writing: " << filename << std::endl;
@@ -80,7 +90,7 @@ public:
     }
     ~WAVWriter() {
         if (pWAV) {
-            drwav_close(pWAV);
+            drwav_uninit(pWAV);
         }
     }
     void writeSample(float f) {

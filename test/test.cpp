@@ -1,5 +1,5 @@
 #include "wav.h"
-#include "../include/Reverb.cpp"
+#include "../include/reverb.hpp"
 
 #include <chrono>
 static long long timeElapsed = 0L;
@@ -56,11 +56,8 @@ int main() {
     WAVWriter writer { "audio/out.wav", loader.sampleRate };
 
     giml::Reverb<float> r{ loader.sampleRate };
-    /*t.setDepth(1.f);
-    t.setSpeed(750.f);*/
+    r.setParams(0.020f, 0.6f, 0.75f, 10.f, 0.75f, giml::Reverb<float>::RoomType::CUBE);
     r.enable();
-    //b.setType(giml::Biquad<float>::BiquadUseCase::BPF);
-    //r.setParams(22395.f);
 
 
     float input, output;

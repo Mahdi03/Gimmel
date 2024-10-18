@@ -1,9 +1,7 @@
 #ifndef GIML_BIQUAD_HPP
 #define GIML_BIQUAD_HPP
-
 #include <math.h>
 #include "utility.hpp"
-
 namespace giml {
     template <typename T>
     class Biquad : public Effect<T> {

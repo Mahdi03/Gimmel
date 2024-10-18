@@ -1,19 +1,14 @@
 #ifndef UTILITY_HPP
 #define UTILITY_HPP
-
 #define _USE_MATH_DEFINES
 #include <math.h>
 #define GIML_TWO_PI 6.28318530717958647692
-
 #include <stdlib.h> // For malloc/calloc/free
 #include <cstring> 
-
 namespace giml {
-
     /**
      * @brief Converts dB value to linear amplitude,
      * the native format of audio samples
-     *
      * @param dBVal input value in dB
      * @return input value in amplitude
      */
@@ -24,7 +19,6 @@ namespace giml {
     /**
      * @brief Converts linear amplitude to dB,
      * a measure of perceived loudness
-     * 
      * @param ampVal input value in linear amplitude
      * @return input value in dB
      */
@@ -38,7 +32,6 @@ namespace giml {
     /**
      * @brief Converts a quantity of milliseconds to an
      * equivalent quantity of samples
-     *
      * @param msVal input value in milliseconds
      * @param sampleRate sample rate of your project
      * @return msVal translated to samples
@@ -50,7 +43,6 @@ namespace giml {
     /**
      * @brief Converts a quantity of samples to an
      * equivalent quantity of milliseconds
-     *
      * @param numSamples input value in samples
      * @param sampleRate samplerate of your project
      * @return numSamples translated to milliseconds
@@ -60,155 +52,156 @@ namespace giml {
     }
 
     /**
-     * @brief Phase Accumulator / Unipolar Saw Oscillator.
-     * Can be used as a control signal and/or waveshaped into other waveforms. 
-     * Will cause aliasing if sonified 
+     * @brief Mixes two numbers with linear interpolation
+     * @param in1 input 1
+     * @param in2 input 2
+     * @param mix percentage of input 2 to mix in. Clamped to [0,1]
+     * @return in1 * (1-mix) + in2 * mix
      */
     template <typename T>
-    class Phasor {
+    T linMix(T in1, T in2, T mix = 0) {
+        if (mix < 0) {mix = 0;}
+        if (mix > 1) {mix = 1;}
+        return in1 * (1-mix) + in2 * mix;
+    }
+
+    /**
+     * @brief clips an input number to keep it within specified bounds
+     * @param in input number
+     * @param min minimum bound
+     * @param max maximum bound
+     * @return clipped input
+     */
+    template <typename T>
+    T clip(T in, T min, T max) {
+        if (in < min) {return min;}
+        else if (in > max) {return max;}
+        else {return in;}
+    }
+
+    /**
+     * @brief bipolar sigmoid function that compresses input to the range `(-1,1)`.
+     * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022 Chapter 3 pg. 84
+     * @param in input
+     * @return `x / sqrt(x^2 + 1)`
+     */
+    template <typename T>
+    T biSigmoid(T in) {
+        return in / ::sqrt(in*in + 1);
+    }
+
+    /**
+     * @brief Limiting function that uses `giml::biSigmoid` to 
+     * limit inputs that exceed a stipulated threshold.
+     * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022 Chapter 7 pg. 205
+     * @param in input
+     * @param thresh threshold 
+     * @return limited `in`
+     */
+    template <typename T>
+    T limit(T in, T thresh) {
+        T lin = giml::clip(in, -thresh, thresh);
+        T nonLin = giml::biSigmoid((in - lin)/(1 - thresh)) * (1 - thresh);
+        return lin + nonLin;
+    }
+
+    /**
+     * @brief calculates the number of samples a given decay multiplier 
+     * will need to decay by -60dB.
+     *
+     * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022
+     * Chapter 6 pg. 168
+     *
+     * @param gVal decay multiplier
+     * @return num samples needed to reach -60dB
+     */
+    template <typename T>
+    T t60time(T gVal) {
+        T impulse = 1;
+        T counter = 0;
+        while (impulse > 2e-10) {
+            impulse *= gVal;
+            counter++;
+        }
+      return counter;
+    }
+
+    /**
+     * @brief calculates a decay multiplier to reach -60dB 
+     * over `numSamps` samples.
+     *
+     * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022
+     * Chapter 6 pg. 168
+     *
+     * @param numSamps decay time in samples
+     * @return decay multiplier
+     */
+    template <typename T>
+    T t60(int numSamps) {
+        T gVal = ::pow(2e-10, 1.f/numSamps);
+      return gVal;
+    }
+
+    /**
+     * @brief Effect class that implements a bypass switch (enabled by default)
+     */
+    template <typename T>
+    class Effect {
+    public:
+        Effect() {}
+        virtual ~Effect() {}
+        virtual void enable() {
+            this->enabled = true;
+        }
+
+        virtual void disable() {
+            this->enabled = false;
+        }
+
+        virtual inline T processSample(const T& in) {
+            return in;
+        }
+
     protected:
-        int sampleRate;
-        T phase = 0.f, frequency = 0.f, phaseIncrement = 0.f;
-
-    public:
-        Phasor() = delete;
-        Phasor(int sampRate) : sampleRate(sampRate) {}
-        ~Phasor() {}
-        // Copy constructor
-        Phasor(const Phasor<T>& c) {
-            this->sampleRate = c.sampleRate;
-            this->phase = c.phase;
-            this->frequency = c.frequency;
-            this->phaseIncrement = c.phaseIncrement;
-        }
-        // Copy assignment constructor
-        Phasor<T>& operator=(const Phasor<T>& c) {
-            this->sampleRate = c.sampleRate;
-            this->phase = c.phase;
-            this->frequency = c.frequency;
-            this->phaseIncrement = c.phaseIncrement;
-
-            return *this;
-        }
-
-        /**
-         * @brief Sets the oscillator's sample rate 
-         * @param sampRate sample rate of your project
-         */
-        virtual void setSampleRate(int sampRate) {
-            this->sampleRate = sampRate;
-            this->phaseIncrement = this->frequency / static_cast<float>(this->sampleRate);
-        }
-
-        /**
-         * @brief Sets the oscillator's frequency
-         * @param freqHz frequency in hertz (cycles per second)
-         */
-        virtual void setFrequency(float freqHz) {
-            this->frequency = freqHz;
-            this->phaseIncrement = ::fabs(this->frequency) / static_cast<T>(this->sampleRate);
-        }
-
-        /**
-         * @brief Increments and returns `phase` 
-         * @return `phase` (after increment)
-         */
-        virtual T processSample() {
-            this->phase += this->phaseIncrement; // increment phase
-            if (this->phase >= 1.f) { // if waveform zenith...
-                this->phase -= 1.f; // wrap phase
-            }
-
-            if (this->frequency < 0) { // if negative frequency...
-                return 1.f - this->phase; // return reverse phasor
-            }
-            else {
-                return this->phase; // return phasor
-            }
-        }
-
-        /**
-         * @brief Sets `phase` manually 
-         * @param ph User-defined phase 
-         * (will be wrapped to the range [0,1] by processSample()) 
-         */
-        virtual void setPhase(float ph) { // set phase manually 
-            this->phase = ph;
-        }
-        
-        /**
-         * @brief Returns `phase` without incrementing. 
-         * If `frequency` is negative, returns `1 - phase`
-         * @return `phase` 
-         */
-        virtual float getPhase() {
-            if (this->frequency < 0) { // if negative frequency...
-                return 1.f - this->phase; // return reverse phasor
-            }
-            else {
-                return this->phase; // return phasor
-            }
-        }
+        bool enabled = false;
     };
 
-    /**
-     * @brief Bipolar Sine Oscillator that inherits from `giml::phasor`,
-     * waveshaped with `sinf`
-     */
     template <typename T>
-    class SinOsc : public Phasor<T> {
-    public:
-        SinOsc(int sampRate) : Phasor<T>(sampRate) {}
-        
-        /**
-         * @brief Increments and returns `phase` 
-         * @return `sinf(phase)` (after increment)
-         */
-        T processSample() override {
-            this->phase += this->phaseIncrement; // increment phase
-            if (this->phase >= 1.f) { // if waveform zenith...
-                this->phase -= 1.f; // wrap phase
-            }
+    class Timer {
+    protected:
+        int n = 0;
+        int N = 1;
+        bool done = false;
 
-            if (this->frequency < 0) { // if negative frequency...
-                return ::sinf(GIML_TWO_PI * (1.f - this->phase)); // return reverse phasor
-            } 
-            else {
-                return ::sinf(GIML_TWO_PI * this->phase); // return phasor
-            }
+    public:  
+        void set(int bigN) {
+            this->n = 0;
+            this->N = bigN;
+            this->done = false;
+        }
+
+        void tick() {
+            if (done) {return;}
+            n++;
+            if (n == N) {this->done = true;}
+        }
+
+        bool isDone() {return done;}
+
+        int timeS() {return n;}
+
+        T timeU() {
+            if (N == 0) {return static_cast<T>(0);} // Avoid division by zero
+            if (done) {return 1;}
+            return static_cast<T>(n) / static_cast<T>(N);
         }
     };
 
     /**
-     * @brief Bipolar Ideal Triangle Oscillator that inherits from `giml::phasor`
-     * Best used as a control signal, will cause aliasing if sonified 
-     */
-    template <typename T>
-    class TriOsc : public Phasor<T> {
-    public:
-        TriOsc(int sampRate) : Phasor<T>(sampRate) {}
-
-        /**
-         * @brief Increments and returns `phase` 
-         * @return Waveshaped `phase` (after increment)
-         */
-        T processSample() override {
-            this->phase += this->phaseIncrement; // increment phase
-            if (this->phase >= 1.f) { // if waveform zenith...
-                this->phase -= 1.f; // wrap phase
-            }
-
-            if (this->frequency < 0) { // if negative frequency...
-                return ::fabs((1 - this->phase) * 2 - 1) * 2 - 1; // return reverse phasor
-            }
-            else {
-                return ::fabs(this->phase * 2 - 1) * 2 - 1; // return phasor
-            }
-        }
-    };
-
-    /**
-     * @brief Circular buffer implementation, handy for effects that require a delay line
+     * @brief Circular buffer implementation. 
+     * Handy for effects that require a delay line.
+     * TODO: Add allpass interpolation -JAJ
+     * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022 Chapter 7 pg. 223
      */
     template <typename T>
     class CircularBuffer {
@@ -547,29 +540,5 @@ namespace giml {
     // struct isFloatingPoint<long double> {
     //     static const bool val = true;
     // };
-
-    /**
-     * @brief Effect class that implements a bypass switch (enabled by default)
-     */
-    template <typename T>
-    class Effect {
-    public:
-        Effect() {}
-        virtual ~Effect() {}
-        virtual void enable() {
-            this->enabled = true;
-        }
-
-        virtual void disable() {
-            this->enabled = false;
-        }
-
-        virtual inline T processSample(const T& in) {
-            return in;
-        }
-
-    protected:
-        bool enabled = false;
-    };
 }
 #endif
