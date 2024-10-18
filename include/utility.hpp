@@ -2,9 +2,13 @@
 #define UTILITY_HPP
 #define _USE_MATH_DEFINES
 #include <math.h>
-#define GIML_TWO_PI 6.28318530717958647692
+#ifndef M_2PI
+#define M_2PI (2 * M_PI)
+#endif
 #include <stdlib.h> // For malloc/calloc/free
 #include <cstring> 
+#include <stdexcept>
+
 namespace giml {
     /**
      * @brief Converts dB value to linear amplitude,
@@ -391,7 +395,7 @@ namespace giml {
 
         void removeAt(size_t indexToRemove) {
             if (indexToRemove >= this->length || indexToRemove < 0) {
-                std::cout << "Array access out of bounds" << std::endl;
+                printf("Array access out of bounds");
                 throw std::out_of_range("Index out of range");
             }
             for (size_t i = indexToRemove; i < this->length - 1; ++i) {
@@ -412,21 +416,21 @@ namespace giml {
                 return returnVal;
             }
             else {
-                std::cout << "Array is already empty!" << std::endl;
+                printf("Array is already empty!/n");
             }
         }
 
         //Array access operators
         T& operator[](size_t index) {
             if (index >= this->length || index < 0) {
-                std::cout << "Array access out of bounds" << std::endl;
+                printf("Array access out of bounds/n");
                 throw std::out_of_range("Index out of range");
             }
             return this->pBackingArr[index];
         }
         const T& operator[](size_t index) const {
             if (index >= this->length || index < 0) {
-                std::cout << "Array access out of bounds" << std::endl;
+                printf("Array access out of bounds/n");
                 throw std::out_of_range("Index out of range");
             }
             return this->pBackingArr[index];
