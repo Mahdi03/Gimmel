@@ -3,7 +3,7 @@
 
 Like chorus, the detune effect is achieved by simulating the doppler effect using a modulated delay line. The fixed pitch-change is maintained via the use of a unipolar sawtooth oscillator, whose frequency determines the amount of transposition. 
 
-A problem is presented when the waveform resets from 1 to 0 or vice verse, audible as 'click' if unaddressed. A solution is found in *gain windowing*, where the gain of the signal is smoothly ramped to zero when the click occurs, and blended with a copy whose phase is offset. 
+A problem is presented when the waveform resets from 1 to 0 or vice verse, audible as a "click" if unaddressed. A solution is found in *gain windowing*, where the gain of the signal is smoothly ramped to zero when the click occurs, and blended with a copy whose phase is offset. 
 
 <!--TO-DO: add windowing diagram--->
 

@@ -4,7 +4,7 @@
 
 A typical compressor is adjustable via a small handful of parameters. A compressor's `threshold` adjusts the amplitude level at which gain reduction is applied. It is typically set in terms of a decibel (dB) value.  
 
-When the threshold is met or exceeded, the volume will be reduced by a factor determined in the `ratio` parameter. For every `ratio` dB above the threshold, the sample's volume above the `threshold` will be reduced by $\text{1/ratio}$.
+When the threshold is met or exceeded, the volume will be reduced by a factor determined in the `ratio` parameter. For every `ratio` dB above the `threshold`, the sample's volume above the `threshold` will be reduced by $\text {1/ratio}$.
 
 Compressors typically have a delayed reaction between when the threshold is exceeded and the compression is fully applied. How quickly a compressor reacts can be adjusted with an `attack` parameter, which is typically measured in milliseconds. Its inverse, the `release` parameter, determines how quickly the compression wanes following the input signal's return to values under the threshold.
 
@@ -16,4 +16,4 @@ Most compressors also have a `knee` parameter, which affects input samples near 
 </figcaption>
 </figure>-->
 
-The compressor implemented in **Gimmel** is based on a [2011 paper](https://aes2.org/publications/elibrary-page/?id=16354) from the Queen Mary University of London which surveys the history of compressor design and presents an favored implementation. 
+The compressor implemented in **Gimmel** is based on a [2011 paper](https://aes2.org/publications/elibrary-page/?id=16354) from the Queen Mary University of London, which surveys the history of compressor design and presents a favored implementation. 
