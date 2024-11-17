@@ -1,0 +1,2 @@
+# Oscillator (Need Improvement)
+[Oscillators](https://en.wikipedia.org/wiki/Electronic_oscillator) generate periodic waveforms in a DSP system. They have a wide range of applications and can be implemented in a wide variety of ways.

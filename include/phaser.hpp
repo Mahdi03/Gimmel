@@ -2,8 +2,8 @@
 #define GIML_PHASER_HPP
 #include <math.h>
 #include "utility.hpp"
+#include "oscillator.hpp"
 #include "biquad.hpp"
-
 namespace giml {
     /**
      * @brief This class implements a basic phaser effect
