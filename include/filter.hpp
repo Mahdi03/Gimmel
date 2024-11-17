@@ -11,7 +11,7 @@ namespace giml {
 
   public:
     //TO-DO: Constructors
-    processSample(T in) {
+    T processSample(T in) {
       this->y_1 = (in * (1-g)) + (this->y_1 * g);
       return y_1;
     }
