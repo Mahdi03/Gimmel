@@ -454,6 +454,47 @@ namespace giml {
         }
     };
 
+    /**
+     * @brief This will be the Effects Line class to set up many Effects in series and pass values
+     * through an entire signal chain. Acts as std::vector<> to some certain extent. Basic usage:
+     * 
+     * giml::Biquad<float> b;
+     * giml::Reverb<float> r;
+     * EffectsLine<float> signalChain;
+     * signalChain.push_back(b);
+     * signalChain.push_back(r);
+     * signalChain.processSample(0.5f);
+     * 
+     * Can later change b & r directly, changes should take effect in EffectsLine
+     * 
+     * @tparam T 
+     */
+    template <typename T>
+    class EffectsLine : private DynamicArray<Effect<T>> {
+    public:
+        EffectsLine(size_t initialCapacity = 5): DynamicArray(initialCapacity) {}
+        //Copy constructor
+        EffectsLine(const EffectsLine& e) {}
+        //Copy assignment operator
+        EffectsLine& operator=(const EffectsLine& e) {}
+        //Destructor
+        ~EffectsLine() {} //Base class destructor automatically called
+
+        /**
+         * @brief Sends the input sample through the entire pedal chain before outputting the final result
+         * 
+         * @param in input sample
+         * @return T returns the final value after going through all the effects in the effect chain
+         */
+        T processSample(T in) {
+            T returnVal = in;
+            for (const Effect<T>& e : this) {
+                returnVal = e.processSample(returnVal);
+            }
+            return returnVal;
+        }
+    };
+
 
     /**
      * @brief Linked List implementation, handy for effects that require a delay line
