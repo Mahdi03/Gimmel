@@ -484,7 +484,7 @@ namespace giml {
     template <typename T>
     class EffectsLine : private DynamicArray<Effect<T>> {
     public:
-        EffectsLine(size_t initialCapacity = 5): DynamicArray(initialCapacity) {}
+        EffectsLine(size_t initialCapacity = 5): DynamicArray<Effect<T>>(initialCapacity) {}
         //Copy constructor
         EffectsLine(const EffectsLine& e) {}
         //Copy assignment operator
