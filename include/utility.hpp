@@ -59,14 +59,26 @@ namespace giml {
      * @brief Mixes two numbers with linear interpolation
      * @param in1 input 1
      * @param in2 input 2
-     * @param mix percentage of input 2 to mix in. Clamped to [0,1]
-     * @return in1 * (1-mix) + in2 * mix
+     * @param mix percentage of input 2 to mix in. Clamped to `[0,1]`
+     * @return `in1 * (1-mix) + in2 * mix`
      */
     template <typename T>
     T linMix(T in1, T in2, T mix = 0) {
-        if (mix < 0) {mix = 0;}
-        if (mix > 1) {mix = 1;}
+        mix = (mix < 0) ? 0 : (mix > 1 ? 1 : mix); // clamp to [0, 1]
         return in1 * (1-mix) + in2 * mix;
+    }
+
+    /**
+     * @brief Mixes two numbers with equal power logic
+     * @param in1 input 1
+     * @param in2 input 2
+     * @param mix in range `[0,1]`
+     * @return `in1 * cos(mix*M_PI_2) + in2 * sin(mix * M_PI_2)`
+     */
+    template <typename T>
+    T powMix(T in1, T in2, T mix = 0.5) {
+        mix = (mix < 0) ? 0 : (mix > 1 ? 1 : mix); // clamp to [0, 1]
+        return in1 * std::cos(mix * M_PI_2) + in2 * std::sin(mix * M_PI_2);
     }
 
     /**
