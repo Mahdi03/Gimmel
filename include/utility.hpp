@@ -174,6 +174,10 @@ namespace giml {
             this->enabled = false;
         }
 
+        virtual void toggleEffect() {
+            this->enabled = !(this->enabled);
+        }
+
         virtual inline T processSample(const T& in) {
             return in;
         }
