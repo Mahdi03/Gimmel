@@ -173,6 +173,10 @@ namespace giml {
         virtual void disable() {
             this->enabled = false;
         }
+        
+        virtual void toggle() {
+            this->enabled = !(this->enabled);
+        }
 
         virtual inline T processSample(const T& in) {
             return in;
@@ -295,7 +299,7 @@ namespace giml {
             if (delayInSamples >= this->bufferSize) { // limit delay to maxIndex
                 delayInSamples = this->bufferSize - 1;
             }
-            long long int readIndex = this->writeIndex - delayInSamples; // calculate readIndex
+            long int readIndex = this->writeIndex - delayInSamples; // calculate readIndex
             if (readIndex < 0) {
                 readIndex += this->bufferSize; // circular logic
             }
@@ -436,14 +440,14 @@ namespace giml {
         T& operator[](size_t index) {
             if (index >= this->length || index < 0) {
                 printf("Array access out of bounds/n");
-                throw std::out_of_range("Index out of range");
+                //throw std::out_of_range("Index out of range");
             }
             return this->pBackingArr[index];
         }
         const T& operator[](size_t index) const {
             if (index >= this->length || index < 0) {
                 printf("Array access out of bounds/n");
-                throw std::out_of_range("Index out of range");
+                //throw std::out_of_range("Index out of range");
             }
             return this->pBackingArr[index];
         }
