@@ -174,7 +174,7 @@ namespace giml {
             this->enabled = false;
         }
         
-        virtual void toggleEffect() {
+        virtual void toggle() {
             this->enabled = !(this->enabled);
         }
 
