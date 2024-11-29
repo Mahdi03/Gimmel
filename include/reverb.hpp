@@ -43,8 +43,9 @@ namespace giml {
             NestedAPF<T>* pCurrentAPF = nullptr;
             for (int i = 0; i < nestingDepth + 1; i++) {
                 //Using placement `new` to force invocation of malloc instead for when we might want to go into embedded
-                pCurrentAPF = (NestedAPF<T>*)malloc(sizeof(NestedAPF<T>));
-                NestedAPF<T>* n = new (pCurrentAPF) NestedAPF<T>{ sampleRate, pCurrentAPF };
+                NestedAPF<T>* temp = (NestedAPF<T>*)malloc(sizeof(NestedAPF<T>)); //Need to use temp or else will lead to infinite nesting
+                NestedAPF<T>* n = new (temp) NestedAPF<T>{ sampleRate, pCurrentAPF };
+                pCurrentAPF = temp;
             }
 
             return pCurrentAPF;
@@ -109,11 +110,11 @@ namespace giml {
         //Destructor
         ~Reverb() {
             //APFs are allocated on heap to persist through calls
-            for (NestedAPF<T>& p : this->beforeAPFs) {
+            for (NestedAPF<T>* p : this->beforeAPFs) {
                 p->~NestedAPF<T>();
                 free(p);
             }
-            for (const auto& p : this->afterAPFs) {
+            for (NestedAPF<T>* p : this->afterAPFs) {
                 p->~NestedAPF<T>();
                 free(p);
             }
