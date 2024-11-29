@@ -88,7 +88,7 @@ namespace giml {
                 4. decimate and return
                 */
 
-                T* arrValues = (T*) ::malloc(this->oversamplingFactor * sizeof(T));
+                T* arrValues = (T*) malloc(this->oversamplingFactor * sizeof(T));
                 //arrValues[this->oversamplingFactor - 1] = in; //Set last value in array to current input
 
                 T delta = (in - prevX) / this->oversamplingFactor;

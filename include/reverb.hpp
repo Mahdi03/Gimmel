@@ -264,7 +264,7 @@ namespace giml {
              */
 
             //Comb Filter Delay Indices
-            float* delayIndices = (float*)::calloc(this->numCombFilters, sizeof(float));
+            float* delayIndices = (float*)calloc(this->numCombFilters, sizeof(float));
             //int delayIndices[this->numCombFilters] = {0};
             delayIndices[0] = this->sampleRate * this->param__time; //They give us max
             delayIndices[this->numCombFilters - 1] = delayIndices[0] / 1.5f; //We know min because of the ratio restriction
@@ -277,12 +277,12 @@ namespace giml {
                 this->parallelCombFilters[i].setDelayIndex(delayIndices[i]);
             }
 
-            ::free(delayIndices);
+            free(delayIndices);
 
             //TODO: Do what we need to do for APF
             int totalAPFs = this->numBeforeAPFs + this->numAfterAPFs;
             if (totalAPFs > 0) { //If we have any APFs to begin with
-                delayIndices = (float*)::calloc(totalAPFs, sizeof(float));
+                delayIndices = (float*)calloc(totalAPFs, sizeof(float));
                 delayIndices[0] = (this->sampleRate * this->param__time)/3; //They give us max
                 delayIndices[totalAPFs - 1] = delayIndices[0] / 1.5f; //We know min because of the ratio restriction
                 float division = M_PI_4 / (totalAPFs - 1); // (pi/4)/number of intermediate comb filters we have left
@@ -297,7 +297,7 @@ namespace giml {
                     this->afterAPFs[i]->setDelaySamples(delayIndices[this->numBeforeAPFs + i]);
                 }
 
-                ::free(delayIndices);
+                free(delayIndices);
             }
         }
         /**

@@ -344,7 +344,7 @@ namespace giml {
         size_t length, initialCapacity, totalCapacity;
 
         void resize(size_t newCapacity) {
-            T* newSpace = (T*)::realloc(this->pBackingArr, newCapacity * sizeof(T));
+            T* newSpace = (T*)realloc(this->pBackingArr, newCapacity * sizeof(T));
             if (newCapacity > this->totalCapacity) {
                 //Then we need to 0-initialize the rest of the new space
                 ::memset((void*)(newSpace + this->totalCapacity), 0, (newCapacity - this->totalCapacity) * sizeof(T));
@@ -356,7 +356,7 @@ namespace giml {
     public:
         //Constructor
         DynamicArray(size_t initialCapacity = 4) {
-            this->pBackingArr = (T*)::calloc(initialCapacity, sizeof(T)); //Needs to be calloc so that the data is zero-ed out
+            this->pBackingArr = (T*)calloc(initialCapacity, sizeof(T)); //Needs to be calloc so that the data is zero-ed out
             this->initialCapacity = initialCapacity;
             this->totalCapacity = initialCapacity;
             this->length = 0;
@@ -364,7 +364,7 @@ namespace giml {
 
         //Copy constructor
         DynamicArray(const DynamicArray& d) {
-            this->pBackingArr = (T*)::malloc(d.totalCapacity * sizeof(T));
+            this->pBackingArr = (T*)malloc(d.totalCapacity * sizeof(T));
             this->initialCapacity = d.initialCapacity;
             this->totalCapacity = d.totalCapacity;
             this->length = d.length;
@@ -375,7 +375,7 @@ namespace giml {
         }
         //Copy assignment operator
         DynamicArray& operator=(const DynamicArray& d) {
-            this->pBackingArr = (T*)::malloc(d.totalCapacity * sizeof(T));
+            this->pBackingArr = (T*)malloc(d.totalCapacity * sizeof(T));
             this->initialCapacity = d.initialCapacity;
             this->totalCapacity = d.totalCapacity;
             this->length = d.length;
@@ -391,7 +391,7 @@ namespace giml {
             for (size_t i = 0; i < this->length; i++) {
                 this->pBackingArr[i].~T(); //Make sure to call the destructor if the object needs to be cleaned up
             }
-            ::free(this->pBackingArr);
+            free(this->pBackingArr);
         }
 
         size_t size() const {
@@ -412,7 +412,7 @@ namespace giml {
         void removeAt(size_t indexToRemove) {
             if (indexToRemove >= this->length || indexToRemove < 0) {
                 printf("Array access out of bounds");
-                throw std::out_of_range("Index out of range");
+                //throw std::out_of_range("Index out of range");
             }
             for (size_t i = indexToRemove; i < this->length - 1; ++i) {
                 this->pBackingArr[i] = this->pBackingArr[i + 1]; //Shift all elements up by 1
@@ -533,7 +533,7 @@ namespace giml {
             while (currNode != this->head) {
                 tempNodeToDelete = currNode;
                 currNode = currNode->next;
-                ::free(tempNodeToDelete);
+                free(tempNodeToDelete);
             }
             //startingNode->next = this->head;
         }
