@@ -42,7 +42,9 @@ namespace giml {
         NestedAPF<T>* createNestedAPF(int sampleRate, int nestingDepth = 0) { //Uses `new`, must be properly deallocated in the Destructor
             NestedAPF<T>* pCurrentAPF = nullptr;
             for (int i = 0; i < nestingDepth + 1; i++) {
-                pCurrentAPF = new NestedAPF<T>{ sampleRate, pCurrentAPF };
+                //Using placement `new` to force invocation of malloc instead for when we might want to go into embedded
+                pCurrentAPF = (NestedAPF<T>*)malloc(sizeof(NestedAPF<T>));
+                NestedAPF<T>* n = new (pCurrentAPF) NestedAPF<T>{ sampleRate, pCurrentAPF };
             }
 
             return pCurrentAPF;
@@ -107,11 +109,13 @@ namespace giml {
         //Destructor
         ~Reverb() {
             //APFs are allocated on heap to persist through calls
-            for (const auto& p : this->beforeAPFs) {
-                delete p;
+            for (NestedAPF<T>& p : this->beforeAPFs) {
+                p->~NestedAPF<T>();
+                free(p);
             }
             for (const auto& p : this->afterAPFs) {
-                delete p;
+                p->~NestedAPF<T>();
+                free(p);
             }
         }
         
@@ -513,7 +517,11 @@ namespace giml {
             }
 
             ~NestedAPF() {
-                delete this->nestedAPF; //Make sure to deallocate this so that 
+                //Deallocate if it hasn't been already
+                if (this->nestedAPF) {
+                    this->nestedAPF->~NestedAPF();
+                    free(this->nestedAPF);
+                }
             }
             /**
              * @brief Sets the number of samples the delay starts at. It sets all nested APFs to have 1/4 that delay
