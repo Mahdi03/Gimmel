@@ -166,21 +166,19 @@ namespace giml {
     public:
         Effect() {}
         virtual ~Effect() {}
-        virtual void enable() {
-            this->enabled = true;
-        }
 
-        virtual void disable() {
-            this->enabled = false;
-        }
+        // `enable()`/`disable()` soon to be deprecated
+        virtual void enable() {this->enabled = true;}
+        virtual void disable() {this->enabled = false;}
         
-        virtual void toggle() {
-            this->enabled = !(this->enabled);
-        }
+        /**
+         * @brief `toggle()` function with overloads. 
+         * @todo replace overload with default arg `!enabled`?
+         */
+        virtual void toggle() {this->enabled = !(this->enabled);}
+        virtual void toggle(bool desiredState) {this->enabled = desiredState;}
 
-        virtual inline T processSample(const T& in) {
-            return in;
-        }
+        virtual inline T processSample(const T& in) {return in;}
 
     protected:
         bool enabled = false;
