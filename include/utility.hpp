@@ -90,9 +90,7 @@ namespace giml {
      */
     template <typename T>
     T clip(T in, T min, T max) {
-        if (in < min) {return min;}
-        else if (in > max) {return max;}
-        else {return in;}
+        return (in < min) ? min : (in > max ? max : in);
     }
 
     /**
@@ -122,8 +120,8 @@ namespace giml {
     }
 
     /**
-     * @brief calculates the number of samples a given decay multiplier 
-     * will need to decay by -60dB.
+     * @brief calculates the number of samples 
+     * a given decay multiplier will need to decay by -60dB.
      *
      * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022
      * Chapter 6 pg. 168
@@ -201,7 +199,7 @@ namespace giml {
         void tick() {
             if (done) {return;}
             n++;
-            if (n == N) {this->done = true;}
+            if (n >= N) {this->done = true;}
         }
 
         bool isDone() {return done;}
@@ -218,7 +216,7 @@ namespace giml {
     /**
      * @brief Circular buffer implementation. 
      * Handy for effects that require a delay line.
-     * TODO: Add allpass interpolation -JAJ
+     * TODO: Add allpass interpolation
      * See Generating Sound & Organizing Time I - Wakefield and Taylor 2022 Chapter 7 pg. 223
      */
     template <typename T>
@@ -234,9 +232,7 @@ namespace giml {
          * @param size in a delay line, the number of past samples stored
          */
         void allocate(size_t size) {
-            if (this->pBackingArr) {
-                free(this->pBackingArr);
-            }
+            if (this->pBackingArr) {free(this->pBackingArr);} // free if occupied
             this->bufferSize = size;
             this->pBackingArr = (T*)calloc(this->bufferSize, sizeof(T)); // zero-fill values
         }
@@ -258,9 +254,7 @@ namespace giml {
         // Copy assignment constructor
         CircularBuffer& operator=(const CircularBuffer& c) {
             //There is a previous object here so first we need to free the previous buffer
-            if (this->pBackingArr) {
-                free(this->pBackingArr);
-            }
+            if (this->pBackingArr) {free(this->pBackingArr);}
             this->bufferSize = c.bufferSize;
             this->pBackingArr = (T*)calloc(bufferSize, sizeof(T));
             for (size_t i = 0; i < this->bufferSize; i++) {
@@ -270,11 +264,8 @@ namespace giml {
             return *this;
         }
 
-        ~CircularBuffer() {
-            if (this->pBackingArr) {
-                free(pBackingArr);
-            }
-        }
+        // Destructor that frees the memory
+        ~CircularBuffer() {if (this->pBackingArr) {free(pBackingArr);}}
 
         /**
          * @brief Writes a new sample to the buffer
@@ -301,7 +292,7 @@ namespace giml {
             if (readIndex < 0) {
                 readIndex += this->bufferSize; // circular logic
             }
-            return this->pBackingArr[readIndex];
+          return this->pBackingArr[readIndex];
         }
 
         inline T readSample(int delayInSamples) const {
@@ -323,13 +314,17 @@ namespace giml {
                 + (this->readSample(readIndex2) * frac); 
         }
 
+        /**
+         * @brief overload for doubles
+         */
         inline T readSample(double delayInSamples) const {
             return this->readSample((float)delayInSamples);
         }
-
-        size_t size() const {
-            return this->bufferSize;
-        }
+        
+        /**
+         * @brief getter for `bufferSize`
+         */
+        size_t size() const {return this->bufferSize;}
     };
 
     /**
@@ -392,13 +387,8 @@ namespace giml {
             free(this->pBackingArr);
         }
 
-        size_t size() const {
-            return this->length;
-        }
-
-        size_t getCapacity() const {
-            return this->totalCapacity;
-        }
+        size_t size() const {return this->length;}
+        size_t getCapacity() const {return this->totalCapacity;}
 
         void pushBack(const T& val) {
             if (this->length == this->totalCapacity) {
@@ -451,21 +441,10 @@ namespace giml {
         }
 
         //Iterator operators to support range-based for loop syntax
-        T* begin() {
-            return this->pBackingArr;
-        }
-
-        const T* begin() const {
-            return this->pBackingArr;
-        }
-
-        T* end() {
-            return this->pBackingArr + this->length;
-        }
-
-        const T* end() const {
-            return this->pBackingArr + this->length;
-        }
+        T* begin() {return this->pBackingArr;}
+        const T* begin() const {return this->pBackingArr;}
+        T* end() {return this->pBackingArr + this->length;}
+        const T* end() const {return this->pBackingArr + this->length;}
     };
 
     /**
@@ -567,37 +546,19 @@ namespace giml {
             }
         }
         // Copy assignment operator
-        LinkedList<T>& operator=(const giml::LinkedList<T>& l) {
-
-        }
-        //Destructor
+        LinkedList<T>& operator=(const giml::LinkedList<T>& l) {}
+        // Destructor
         ~LinkedList() {
             // Clean up entire LinkedList
             freeUpRestOfList(this->head);
             //free(this->head);
         }
 
-
-        size_t size() {
-            return this->length;
-        }
+        /**
+         * @brief getter for size
+         */
+        size_t size() {return this->length;}
     };
-    // template <typename T>
-    // struct isFloatingPoint {
-    //     static const bool val = false;
-    // };
 
-    // template <>
-    // struct isFloatingPoint<float> {
-    //     static const bool val = true;
-    // };
-    // template <>
-    // struct isFloatingPoint<double> {
-    //     static const bool val = true;
-    // };
-    // template <>
-    // struct isFloatingPoint<long double> {
-    //     static const bool val = true;
-    // };
-}
+} // namespace giml
 #endif
