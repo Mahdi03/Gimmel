@@ -441,10 +441,10 @@ namespace giml {
              //Set comb feedback gains corresponding to the newly calculated RT60 decay time
             for (int i = 0; i < this->numCombFilters; i++) {
                 float delayIndex = this->parallelCombFilters[i].getDelayIndex();
-                float feedbackGain = ::powf(10, -3 * delayIndex / (this->sampleRate * RT60));
-                // if (feedbackGain > 0.95) {
-                //     feedbackGain = 0.95;
-                // } //TODO: Find a better way to clamp or be more precise
+                float feedbackGain = ::pow(10, -3 * delayIndex / (this->sampleRate * RT60));
+                if (feedbackGain > 0.75) {
+                    feedbackGain = 0.75;
+                } //TODO: Find a better way to clamp or be more precise
                 //Flip the phase of every other comb filter
                 if (i % 2) {
                     this->parallelCombFilters[i].setCombFeedbackGain(-feedbackGain);
