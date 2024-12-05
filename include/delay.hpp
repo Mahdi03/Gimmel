@@ -1,6 +1,5 @@
 #ifndef GIML_DELAY_HPP
 #define GIML_DELAY_HPP
-#include <math.h>
 #include "utility.hpp"
 #include "filter.hpp"
 namespace giml {
@@ -8,7 +7,7 @@ namespace giml {
      * @brief This class implements a basic delay with feedback effect. 
      * @tparam T floating-point type for input and output sample data such as `float`, `double`, or `long double`,
      * up to user what precision they are looking for (float is more performant)
-     * TODO: Add limiter for feedback
+     * @todo store delayTime in samples 
      */
     template <typename T>
     class Delay : public Effect<T> {
@@ -33,12 +32,12 @@ namespace giml {
          * @return `in * 1-blend + y_D * blend`
          */
         T processSample(T in) {
-            if (!(this->enabled)) {return in;}
-            
+            // calling `millisToSamples` every sample is not performant 
             T readIndex = millisToSamples(this->delayTime, this->sampleRate); // calculate read index
             T y_0 = loPass.lpf(this->buffer.readSample(readIndex)); // read from buffer and loPass
             this->buffer.writeSample(this->dcBlock.hpf(in + giml::limit<T>(y_0 * this->feedback, 0.75))); // write sample to delay buffer
 
+          if (!(this->enabled)) {return in;} 
           return giml::linMix<float>(in, y_0, this->blend); // return wet/dry mix
         }
 
@@ -46,9 +45,7 @@ namespace giml {
          * @brief Set feedback gain.  
          * @param fbGain gain in linear amplitude. Be careful setting above 1!
          */
-        void setFeedback(T fbGain) {
-            this->feedback = fbGain;
-        }
+        void setFeedback(T fbGain) {this->feedback = fbGain;}
 
         /**
          * @brief Set feedback gain based on a t60 time value  
@@ -73,19 +70,17 @@ namespace giml {
          * @brief Set blend (linear)
          * @param gWet percentage of wet to blend in. Clipped to `[0,1]`
          */
-        void setBlend(T gWet) { 
-            this->blend = giml::clip<T>(gWet, 0, 1);
-        }
+        void setBlend(T gWet) {this->blend = giml::clip<T>(gWet, 0, 1);}
         
         /**
          * @brief Set damping manually
          * @param a damping value. Clipped to `[0,1]`
          */
         void setDamping(T a) { 
-            a = giml::clip<T>(a, 0, 1);
-            this->damping = a;
-            this->loPass.setG(a);
+            this->damping = giml::clip<T>(a, 0, 1);;
+            this->loPass.setG(this->damping);
         }
     };
-}
+
+} // namespace giml
 #endif
