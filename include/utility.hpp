@@ -166,15 +166,15 @@ namespace giml {
         virtual ~Effect() {}
 
         // `enable()`/`disable()` soon to be deprecated
-        virtual void enable() {this->enabled = true;}
-        virtual void disable() {this->enabled = false;}
+        virtual void enable() { this->enabled = true; }
+        virtual void disable() { this->enabled = false; }
         
         /**
          * @brief `toggle()` function with overloads. 
          * @todo replace overload with default arg `!enabled`?
          */
-        virtual void toggle() {this->enabled = !(this->enabled);}
-        virtual void toggle(bool desiredState) {this->enabled = desiredState;}
+        virtual void toggle() { this->enabled = !(this->enabled); }
+        virtual void toggle(bool desiredState) { this->enabled = desiredState; }
 
         virtual inline T processSample(const T& in) {return in;}
 
@@ -197,18 +197,18 @@ namespace giml {
         }
 
         void tick() {
-            if (done) {return;}
+            if (done) { return; }
             n++;
-            if (n >= N) {this->done = true;}
+            if (n >= N) { this->done = true; }
         }
 
-        bool isDone() {return done;}
+        bool isDone() { return done; }
 
-        int timeS() {return n;}
+        int timeS() { return n; }
 
         T timeU() {
-            if (N == 0) {return static_cast<T>(0);} // Avoid division by zero
-            if (done) {return 1;}
+            if (N == 0) { return static_cast<T>(0); } // Avoid division by zero
+            if (done) { return 1; }
             return static_cast<T>(n) / static_cast<T>(N);
         }
     };
@@ -232,7 +232,7 @@ namespace giml {
          * @param size in a delay line, the number of past samples stored
          */
         void allocate(size_t size) {
-            if (this->pBackingArr) {free(this->pBackingArr);} // free if occupied
+            if (this->pBackingArr) { free(this->pBackingArr); } // free if occupied
             this->bufferSize = size;
             this->pBackingArr = (T*)calloc(this->bufferSize, sizeof(T)); // zero-fill values
         }
@@ -254,7 +254,7 @@ namespace giml {
         // Copy assignment constructor
         CircularBuffer& operator=(const CircularBuffer& c) {
             //There is a previous object here so first we need to free the previous buffer
-            if (this->pBackingArr) {free(this->pBackingArr);}
+            if (this->pBackingArr) { free(this->pBackingArr); }
             this->bufferSize = c.bufferSize;
             this->pBackingArr = (T*)calloc(bufferSize, sizeof(T));
             for (size_t i = 0; i < this->bufferSize; i++) {
@@ -265,7 +265,7 @@ namespace giml {
         }
 
         // Destructor that frees the memory
-        ~CircularBuffer() {if (this->pBackingArr) {free(pBackingArr);}}
+        ~CircularBuffer() { if (this->pBackingArr) { free(pBackingArr); } }
 
         /**
          * @brief Writes a new sample to the buffer
@@ -285,13 +285,10 @@ namespace giml {
          * @return `buffer[writeIndex - delayInSamples]`
          */
         inline T readSample(size_t delayInSamples) const {
-            if (delayInSamples >= this->bufferSize) { // limit delay to maxIndex
-                delayInSamples = this->bufferSize - 1;
-            }
+            // limit delay to maxIndex
+            if (delayInSamples >= this->bufferSize) { delayInSamples = this->bufferSize - 1; }
             long int readIndex = this->writeIndex - delayInSamples; // calculate readIndex
-            if (readIndex < 0) {
-                readIndex += this->bufferSize; // circular logic
-            }
+            if (readIndex < 0) { readIndex += this->bufferSize; } // circular logic 
           return this->pBackingArr[readIndex];
         }
 
@@ -324,7 +321,7 @@ namespace giml {
         /**
          * @brief getter for `bufferSize`
          */
-        size_t size() const {return this->bufferSize;}
+        size_t size() const { return this->bufferSize; }
     };
 
     /**
@@ -387,8 +384,8 @@ namespace giml {
             free(this->pBackingArr);
         }
 
-        size_t size() const {return this->length;}
-        size_t getCapacity() const {return this->totalCapacity;}
+        size_t size() const { return this->length; }
+        size_t getCapacity() const { return this->totalCapacity; }
 
         void pushBack(const T& val) {
             if (this->length == this->totalCapacity) {
@@ -417,7 +414,7 @@ namespace giml {
             if (this->length > 0) {
                 T returnVal = (*this)[this->length - 1];
                 this->removeAt(this->length - 1);
-                return returnVal;
+              return returnVal;
             }
             else {
                 printf("Array is already empty!/n");
@@ -440,11 +437,11 @@ namespace giml {
             return this->pBackingArr[index];
         }
 
-        //Iterator operators to support range-based for loop syntax
-        T* begin() {return this->pBackingArr;}
-        const T* begin() const {return this->pBackingArr;}
-        T* end() {return this->pBackingArr + this->length;}
-        const T* end() const {return this->pBackingArr + this->length;}
+        // Iterator operators to support range-based for loop syntax
+        T* begin() { return this->pBackingArr; }
+        const T* begin() const { return this->pBackingArr; }
+        T* end() { return this->pBackingArr + this->length; }
+        const T* end() const { return this->pBackingArr + this->length; }
     };
 
     /**
@@ -484,7 +481,7 @@ namespace giml {
             for (const Effect<T>& e : this) {
                 returnVal = e.processSample(returnVal);
             }
-            return returnVal;
+          return returnVal;
         }
     };
 
@@ -557,7 +554,7 @@ namespace giml {
         /**
          * @brief getter for size
          */
-        size_t size() {return this->length;}
+        size_t size() { return this->length; }
     };
 
 } // namespace giml
