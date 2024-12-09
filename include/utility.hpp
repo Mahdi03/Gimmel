@@ -27,9 +27,7 @@ namespace giml {
      * @return input value in dB
      */
     float aTodB(float ampVal) {
-        if (ampVal == 0) {
-            ampVal += 1e-6;
-        }
+        if (ampVal == 0) { ampVal += 1e-6; } // prevents nans for input of 0
         return 20.f * ::log10f(::fabs(ampVal));
     }
 
@@ -63,7 +61,7 @@ namespace giml {
      * @return `in1 * (1-mix) + in2 * mix`
      */
     template <typename T>
-    T linMix(T in1, T in2, T mix = 0) {
+    T linMix(T in1, T in2, T mix = 0.5) {
         mix = (mix < 0) ? 0 : (mix > 1 ? 1 : mix); // clamp to [0, 1]
         return in1 * (1-mix) + in2 * mix;
     }
@@ -82,7 +80,7 @@ namespace giml {
     }
 
     /**
-     * @brief clips an input number to keep it within specified bounds
+     * @brief clips an input number to keep it within specified bounds (inclusive)
      * @param in input number
      * @param min minimum bound
      * @param max maximum bound
@@ -157,7 +155,7 @@ namespace giml {
     }
 
     /**
-     * @brief Effect class that implements a bypass switch (enabled by default)
+     * @brief Effect class that implements a toggle switch (disabled by default)
      */
     template <typename T>
     class Effect {
@@ -166,17 +164,17 @@ namespace giml {
         virtual ~Effect() {}
 
         // `enable()`/`disable()` soon to be deprecated
-        virtual void enable() { this->enabled = true; }
+        virtual void enable() { this->enabled = true; } 
+        // `enable()`/`disable()` soon to be deprecated
         virtual void disable() { this->enabled = false; }
         
         /**
          * @brief `toggle()` function with overloads. 
-         * @todo replace overload with default arg `!enabled`?
          */
         virtual void toggle() { this->enabled = !(this->enabled); }
         virtual void toggle(bool desiredState) { this->enabled = desiredState; }
 
-        virtual inline T processSample(const T& in) {return in;}
+        virtual inline T processSample(const T& in) { return in; }
 
     protected:
         bool enabled = false;
@@ -410,18 +408,15 @@ namespace giml {
             }
         }
 
-        T popBack() { //Removes & returns the last element in the dynamic array
+        T popBack() { // Removes & returns the last element in the dynamic array
             if (this->length > 0) {
                 T returnVal = (*this)[this->length - 1];
                 this->removeAt(this->length - 1);
               return returnVal;
-            }
-            else {
-                printf("Array is already empty!/n");
-            }
+            } else { printf("Array is already empty!/n"); }
         }
 
-        //Array access operators
+        // Array access operators
         T& operator[](size_t index) {
             if (index >= this->length || index < 0) {
                 printf("Array access out of bounds/n");

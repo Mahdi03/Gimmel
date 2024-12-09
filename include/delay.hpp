@@ -13,7 +13,7 @@ namespace giml {
     class Delay : public Effect<T> {
     private:
         int sampleRate;
-        T feedback = 0, delayTime = 0, blend = 0.5, damping = 0;
+        T feedback = 0.3, delayTime = 398.0, blend = 0.5, damping = 0.5;
         giml::onePole<T> loPass; // loPass filter for damping
         giml::onePole<T> dcBlock; // See Generating Sound & Organizing Time I - Wakefield and Taylor 2022 Chapter 7 pg. 204
         giml::CircularBuffer<T> buffer; // circular buffer to store past  values
@@ -21,9 +21,9 @@ namespace giml {
     public:
         Delay() = delete;
         Delay(int samprate, T maxDelayMillis = 3000) : sampleRate(samprate) {
-            this->buffer.allocate(giml::millisToSamples(maxDelayMillis, samprate)); // max delayTime = maxDelay
+            this->buffer.allocate(giml::millisToSamples(maxDelayMillis, samprate)); // max delayTime is 3 seconds
             this->loPass.setG(this->damping); // set damping 
-            this->dcBlock.setCutoff(3, samprate);// set dcBlock at 3Hz
+            this->dcBlock.setCutoff(3.0, samprate);// set dcBlock at 3Hz
         }
         
         /**
@@ -42,19 +42,14 @@ namespace giml {
         }
 
         /**
-         * @brief Set feedback gain.  
-         * @param fbGain gain in linear amplitude. Be careful setting above 1!
+         * @brief sets params delayTime, feedback, damping, and blend
          */
-        void setFeedback(T fbGain) { this->feedback = fbGain; }
-
-        /**
-         * @brief Set feedback gain based on a t60 time value  
-         * @param timeMillis desired decay time in milliseconds
-         */
-        void setFeedback_t60(T timeMillis) {
-            T normalizedDecay = millisToSamples(timeMillis, this->sampleRate) / 
-            millisToSamples(this->delayTime, this->sampleRate);
-            this->feedback = giml::t60<T>(static_cast<int>(::round(normalizedDecay)));
+        void setParams(T delayTime = 398.0, T feedback = 0.3, 
+                       T damping = 0.5, T blend = 0.5) {
+            this->setDelayTime(delayTime);
+            this->setFeedback(feedback);
+            this->setDamping(damping);
+            this->setBlend(blend);
         }
 
         /**
@@ -67,11 +62,11 @@ namespace giml {
         }
 
         /**
-         * @brief Set blend (linear)
-         * @param gWet percentage of wet to blend in. Clipped to `[0,1]`
+         * @brief Set feedback gain.  
+         * @param fbGain gain in linear amplitude. Be careful setting above 1!
          */
-        void setBlend(T gWet) { this->blend = giml::clip<T>(gWet, 0, 1); }
-        
+        void setFeedback(T fbGain) { this->feedback = fbGain; }
+
         /**
          * @brief Set damping manually
          * @param a damping value. Clipped to `[0,1]`
@@ -80,6 +75,23 @@ namespace giml {
             this->damping = giml::clip<T>(a, 0, 1);;
             this->loPass.setG(this->damping);
         }
+
+        /**
+         * @brief Set blend (linear)
+         * @param gWet percentage of wet to blend in. Clipped to `[0,1]`
+         */
+        void setBlend(T gWet) { this->blend = giml::clip<T>(gWet, 0, 1); }
+
+        /**
+         * @brief Set feedback gain based on a t60 time value  
+         * @param timeMillis desired decay time in milliseconds
+         */
+        void setFeedback_t60(T timeMillis) {
+            T normalizedDecay = millisToSamples(timeMillis, this->sampleRate) / 
+            millisToSamples(this->delayTime, this->sampleRate);
+            this->feedback = giml::t60<T>(static_cast<int>(::round(normalizedDecay)));
+        }
+
     };
 
 } // namespace giml
